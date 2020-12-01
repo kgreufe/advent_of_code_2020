@@ -1,5 +1,0 @@
----
-title: "20-1201_exercise2.Rmd"
-output: html_document
----
-
