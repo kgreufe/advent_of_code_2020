@@ -1,4 +1,2 @@
 
-# test change to file adding more text
-#  adding more stuff
-  #new test comment
+# test file only for git commits and such
