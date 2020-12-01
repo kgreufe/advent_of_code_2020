@@ -41,7 +41,7 @@ Of course, your expense report is much larger. Find the two entries that sum to 
 
 ```{r load inputs}
 
-
+read_file("20-1201/exercise1_input.txt")
 
 ```
 

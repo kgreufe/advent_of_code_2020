@@ -3,8 +3,6 @@
 .Rapp.history
 # Session Data files
 .RData
-# R Project files
-.Rproj
 # User-specific files
 .Ruserdata
 # Example code in package build process
@@ -28,4 +26,4 @@ vignettes/*.pdf
 *.knit.md
 # R Environment Variables
 .Renviron
-20-1201_advent_of_code_2020.Rproj
+
