@@ -40,8 +40,29 @@ Of course, your expense report is much larger. Find the two entries that sum to 
 ## My puzzle inputs
 
 ```{r load inputs}
+df <- 
+  read_csv("20-1201/exercise1_input.txt",
+           col_names = 'x', 
+           col_types = cols(.default = "d"))
 
-read_file("20-1201/exercise1_input.txt")
+```
 
+
+## Which two sum to 2020? And What is their product?
+
+```{r}
+
+# values are all unique?
+count(df, x, sort = TRUE)
+# yes
+
+combn(df$x, 2) %>% 
+  t() %>% 
+  as_tibble() %>% 
+  mutate(sum = V1 + V2, 
+         product = V1 * V2) %>% 
+  filter(sum == 2020)
+# 1191 and 829 sum to 2020
+# product is 987339
 ```
 
