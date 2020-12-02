@@ -41,7 +41,7 @@ Of course, your expense report is much larger. Find the two entries that sum to 
 
 ```{r load inputs}
 df <- 
-  read_csv("20-1201/exercise1_input.txt",
+  read_csv("20-1201_exercise1_input_expense_report.txt",
            col_names = 'x', 
            col_types = cols(.default = "d"))
 
