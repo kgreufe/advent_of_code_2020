@@ -64,7 +64,7 @@ Starting at the top-left corner of your map and following a slope of right 3 and
 ## Exercise 1
 
 ```{r load data}
-df <- 
+df_raw <- 
   read_csv("20-1203_exercise3_input_toboggan_trajectory.txt", 
          col_names = "x", 
          col_types = cols(.default = "c"))
@@ -72,28 +72,113 @@ df <-
 ```
 
 ```{r wrange to tibble}
-df1 <- 
-  separate(data = df, 
+df <- 
+  separate(data = df_raw, 
            col =  x, 
-           into = as.character(1:(str_length(df[1, 1]) + 1)), 
+           into = as.character(1:(str_length(df_raw[1, 1]) + 1)), 
            sep = "") 
 
 # first column is blank from separate process above -- remove it
 
-df1 <- select(df1, -1)
+df <- select(df, -1)
 
 # adjust row names 
 
-names(df1) <- 
-  as.character(as.integer(names(df1)) - 1)
+names(df) <- 
+  as.character(as.integer(names(df)) - 1)
 
-df1
+df
 ```
 
 ```{r evaluate}
 trees_hit <- 0
 
+xpos <- 1
+ypos <- 1
 
+while(xpos < nrow(df)) {
+  ypos <- ypos + 3
+  ypos <- if_else(ypos > ncol(df), 
+                  ypos - ncol(df), 
+                  ypos)
+  xpos <- xpos + 1
+  
+  trees_hit <-
+    trees_hit + if_else(df[xpos, ypos] == "#", 1, 0)
+
+  }
+
+trees_hit
   
 ```
 
+294 trees hit
+
+
+## Exercise 2
+
+Time to check the rest of the slopes - you need to minimize the probability of a sudden arboreal stop, after all.
+
+Determine the number of trees you would encounter if, for each of the following slopes, you start at the top-left corner and traverse the map all the way to the bottom:
+
+Right 1, down 1.
+Right 3, down 1. (This is the slope you already checked.)
+Right 5, down 1.
+Right 7, down 1.
+Right 1, down 2.
+
+In the above example, these slopes would find 2, 7, 3, 4, and 2 tree(s) respectively; multiplied together, these produce the answer 336.
+
+What do you get if you multiply together the number of trees encountered on each of the listed slopes?
+
+```{r}
+
+# these are the slopes we need to investigate
+
+slopes <- 
+  tribble(
+    ~right, ~down, ~trees_hit,
+    1,       1,     NA_integer_,
+    3,       1,     NA_integer_, 
+    5,       1,     NA_integer_,
+    7,       1,     NA_integer_,
+    1,       2,     NA_integer_
+  )
+
+
+
+for (i in 1:nrow(slopes)) {
+  
+  # initialize data each loop
+  trees_hit <- 0
+  ypos <- 1
+  xpos <- 1
+  
+  # set this loop's variables
+  yadd <- slopes[[i, 1]]
+  xadd <- slopes[[i, 2]]
+  
+  while (xpos < nrow(df)) {
+    ypos <- ypos + yadd
+    ypos <- if_else(ypos > ncol(df), 
+                    ypos - ncol(df), 
+                    ypos)
+    xpos <- xpos + xadd
+    
+    trees_hit <- 
+      trees_hit + 
+      if_else(df[xpos, ypos] == "#", 1, 0)
+    
+  }
+  
+  slopes[i, 3] <- trees_hit
+  
+}
+
+slopes
+
+prod(slopes$trees_hit)
+```
+
+5774564250 is the product of the number of trees hit for each slope
+( 75 294  79  85  39)
