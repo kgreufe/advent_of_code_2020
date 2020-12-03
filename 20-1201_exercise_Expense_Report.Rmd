@@ -1,5 +1,5 @@
 ---
-title: "20-1201_exercise1_Expense_Report"
+title: "20-1201 Expense Report"
 output: html_document
 ---
 
