@@ -1,0 +1,10 @@
+---
+title: '20-1203 Toboggan Trajectory'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+## Day 3: Toboggan Trajectory
