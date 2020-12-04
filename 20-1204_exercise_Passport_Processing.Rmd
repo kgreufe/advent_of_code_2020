@@ -60,7 +60,7 @@ df_raw <-
 ```
   
 ```{r wrangle}
-# these are all the possible variable
+# these are all the possible variables
 #  will use this table in joins
 
 all_vals <- 
@@ -76,13 +76,14 @@ all_vals <-
     "cid", "country id"
   )
 
+
 df <- 
   df_raw %>% 
     # two new lines means new record
   str_split(pattern = regex("\n\n")) %>% 
     # returns list length 1 of splits
   unlist() %>% 
-    # records have various random new lines in them; replace them with spaces
+    # records have various random new lines in them separating data; replace them with spaces
   str_replace_all(pattern = regex("\n"), " ") %>% 
     # remove extra white space
   str_trim() %>% 
@@ -117,6 +118,10 @@ df <-
   pivot_wider(id_cols = grp, 
               names_from = key, 
               values_from = value)
+
+# cid doesn't matter for either exercise, changing all values to 1
+df$cid <- "1"
+
 ```
 
 
@@ -125,26 +130,30 @@ df <-
 ```{r exercise1}
 
 # add eval column as string of 1's and 0's
+
+# df <- 
+#   df %>% 
+#   mutate(eval1 = str_c(if_else(!is.na(byr), 1, 0), 
+#                       if_else(!is.na(cid), 1, 0),
+#                       if_else(!is.na(ecl), 1, 0),
+#                       if_else(!is.na(eyr), 1, 0),
+#                       if_else(!is.na(hcl), 1, 0),
+#                       if_else(!is.na(hgt), 1, 0),
+#                       if_else(!is.na(iyr), 1, 0),
+#                       if_else(!is.na(pid), 1, 0)
+#                       ) )
+
+# replaced above with following, taking advantage of the new dplyr c_across:
 df <- 
-  df %>% 
-  mutate(eval1 = str_c(if_else(!is.na(byr), 1, 0), 
-                      if_else(!is.na(cid), 1, 0),
-                      if_else(!is.na(ecl), 1, 0),
-                      if_else(!is.na(eyr), 1, 0),
-                      if_else(!is.na(hcl), 1, 0),
-                      if_else(!is.na(hgt), 1, 0),
-                      if_else(!is.na(iyr), 1, 0),
-                      if_else(!is.na(pid), 1, 0)
-                      ) )
+  df %>%  
+  rowwise() %>% 
+  mutate(eval1 = str_c(if_else(!is.na(c_across(byr:pid)), "1", "0"), collapse = ""))
 
-# a record is good if it has all values, except for "cid" which it can have or not
-# so there are two good values in our eval1:
-#    one for those that have all fields, and
-#    one for those that have all fields except "cid"
-# "cid" in this data frame is the third column (second in the evaluation)
-good1 <- c("11111111", "10111111")
 
-sum(df$eval1 %in% good1)
+# a record is good if it has all values
+# "cid" in this data frame is always 1 (manual add), so only valid answer is all "1"s
+
+sum(df$eval1 == "11111111")
 
 ```
 
