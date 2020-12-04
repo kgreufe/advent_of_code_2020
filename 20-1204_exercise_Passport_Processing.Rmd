@@ -235,28 +235,37 @@ ecl_valid <- c("amb", "blu", "brn", "gry", "grn", "hzl", "oth")
 # second evaluation, in column (alphabetical) order
 df_two <- 
   df_two %>% 
-  mutate(eval2 = str_c(if_else(is_integer(as.integer(byr)) & 
-                                 between(byr, 1920, 2002), 
-                               1, 0), 
-                       1, # we're counting "cid" regardless of whether one exists
-                       if_else(ecl %in% ecl_valid, 1, 0), 
-                       if_else(is_integer(as.integer(eyr)) & 
-                                 between(eyr, 2020, 2030), 
-                               1, 0), 
-                       if_else(str_detect(hcl, "^#[0-9|a-f]*") & 
-                                 str_locate(hcl, "^#[0-9|a-f]*")[, 2] == 7, 
-                               1, 0), 
-                       if_else(str_detect(hgt, "(in|cm)$"), 
-                               case_when(str_detect(hgt, "in$") &
-                                           between(parse_number(hgt), 59, 76) ~ 1,
-                                         str_detect(hgt, "cm$") &
-                                           between(parse_number(hgt), 150, 193) ~ 1,
-                                         TRUE ~ 0),
-                               0), 
-                       if_else(is_integer(as.integer(iyr)) & 
-                                 between(iyr, 2010, 2020), 
-                               1, 0), 
-                       if_else(str_locate(pid, "[0-9]*")[, 2] == 9, 1, 0)
+  mutate(eval2 = str_c(
+      # birth year (4 digits, between 1920 and 2002)
+    if_else(is_integer(as.integer(byr)) & 
+              between(byr, 1920, 2002), 
+            1, 0), 
+      # we're counting "cid" regardless of whether one exists
+    1,
+      # eye color (exact string matching, see vector above)
+    if_else(ecl %in% ecl_valid, 1, 0), 
+      # expiration year (4 digits, between 2020 and 2030)
+    if_else(is_integer(as.integer(eyr)) & 
+              between(eyr, 2020, 2030), 
+            1, 0), 
+      # hair color (a "#" followed by exactly six characters combining 0-9 and a-f)
+    if_else(str_detect(hcl, "^#[0-9|a-f]*") & 
+              str_locate(hcl, "^#[0-9|a-f]*")[, 2] == 7, 
+            1, 0),
+      # height (if inches, between 59 and 76; if centimeters, between 150 and 193)
+    if_else(str_detect(hgt, "(in|cm)$"), 
+            case_when(str_detect(hgt, "in$") &
+                        between(parse_number(hgt), 59, 76) ~ 1,
+                      str_detect(hgt, "cm$") &
+                        between(parse_number(hgt), 150, 193) ~ 1,
+                      TRUE ~ 0),
+            0), 
+      # issue year (four digits; between 2010 and 2020)
+    if_else(is_integer(as.integer(iyr)) & 
+              between(iyr, 2010, 2020), 
+            1, 0),
+      # passport id (9 digit number, including leading zeroes)
+    if_else(str_locate(pid, "[0-9]*")[, 2] == 9, 1, 0)
   ) ) %>% 
   relocate(grp, eval1, eval2)
 
