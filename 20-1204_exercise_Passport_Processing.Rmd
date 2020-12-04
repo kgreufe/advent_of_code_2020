@@ -235,7 +235,7 @@ Count the number of valid passports - those that have all required fields and va
 
 df_two <- 
   df %>% 
-  filter(eval1 %in% good1)
+  filter(eval1 == "11111111")
 
 # some prep 
 
