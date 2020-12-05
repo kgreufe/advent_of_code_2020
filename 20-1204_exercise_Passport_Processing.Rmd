@@ -81,7 +81,7 @@ df <-
   df_raw %>% 
     # two new lines means new record
   str_split(pattern = regex("\n\n")) %>% 
-    # returns list length 1 of splits
+    # returns list length 1 containing all the splits; let's extract out to just the character vector
   unlist() %>% 
     # records have various random new lines in them separating data; replace them with spaces
   str_replace_all(pattern = regex("\n"), " ") %>% 
@@ -122,6 +122,7 @@ df <-
 # cid doesn't matter for either exercise, changing all values to 1
 df$cid <- "1"
 
+df
 ```
 
 
