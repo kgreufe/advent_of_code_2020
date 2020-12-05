@@ -56,7 +56,7 @@ Count the number of valid passports - those that have all required fields. Treat
 
 ```{r load data}
 df_raw <- 
-  read_file("20-1204_exercise4_input_passport_processing.txt")
+  read_file("20-1204_input_passport_processing.txt")
 ```
   
 ```{r wrangle}
