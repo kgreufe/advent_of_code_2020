@@ -94,7 +94,7 @@ df <-
   map(.f = as_tibble) %>% 
     # split our single column into key value pair columns
   map(.f = separate, col = value, into = c("key", "value"), sep = ":") %>%
-    # left join to make sure each tibble has all keys
+    # right join to make sure each tibble has all keys
   map(.f = right_join, y = select(all_vals, key), by = "key") %>% 
     # arrange for cleanliness (not necessary)
   map(.f = arrange, key)
