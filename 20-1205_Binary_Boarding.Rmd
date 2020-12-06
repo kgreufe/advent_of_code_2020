@@ -61,6 +61,10 @@ df_raw <-
 ```
 
 
+I'll solve this by creating all combos possible on the plane and identifying their seat id's.  
+
+Then, I'll join to my exercise data to solve hte exercises. 
+
 ```{r row combos}
 bf <- c("B", "F")
 
