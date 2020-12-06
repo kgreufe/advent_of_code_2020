@@ -122,8 +122,11 @@ combos_all <-
 What's the highest seat ID in my exercise data?
 
 ```{r join combos to exercise data}
-combos_all %>%
-  inner_join(df_raw, by = "seat_chr") %>% 
+sold_tix <- 
+  combos_all %>%
+  inner_join(df_raw, by = "seat_chr")
+
+sold_tix %>% 
   .$seatid %>% 
   max()
 
@@ -135,4 +138,25 @@ Seat 947 is the highest seat ID I have in my exercise data
 
 ## Exercise 2
 
+Ding! The "fasten seat belt" signs have turned on. Time to find your seat.
+
+It's a completely full flight, so your seat should be the only missing boarding pass in your list. However, there's a catch: some of the seats at the very front and back of the plane don't exist on this aircraft, so they'll be missing from your list as well.
+
+Your seat wasn't at the very front or back, though; the seats with IDs +1 and -1 from yours will be in your list.
+
+What is the ID of your seat?
+
+```{r}
+# whichever seat doesn't have a seatid following it (that is, essentially, seatid + 1 doesn't exist) should be the seat immediately before mine. Add 1 and that should be my seat
+
+sold_tix %>% 
+  select(seat_chr, seatid) %>% 
+  filter(seatid != lead(seatid) - 1) %>% 
+  .$seatid + 1
+  
+```
+
+Seat 635 doesn't have a seatid following it in my exercise data, therefore...
+
+My seat is 636
 
