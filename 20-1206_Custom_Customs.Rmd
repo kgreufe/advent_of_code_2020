@@ -1,0 +1,13 @@
+---
+title: '20-1206 Custom Customs'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+## Day 6:Custom Customs
+
