@@ -72,23 +72,20 @@ df <-
 
 df %>% 
   split(f = as.factor(.$group)) %>% # create a list of each grouping
-  map(.f = ~ mutate(., x = str_split(value, "", simplify = TRUE)) %>% # split characters into matrix
-        .$x %>%  # extract matrix
-        as.vector() %>% # change matrix to vector
-        .[. != ""] %>%  # remove empty strings
-        unique() %>% # remove duplicate characters
-        sort() %>% # for aesthetics only
-        str_c(collapse = "") %>% # condense to one string
-        str_length() %>% # count length of string
-        as_tibble() # convert to data.frame so we can bind rows below
-      ) %>% 
-  bind_rows() %>% 
-  .$value %>% 
-  sum()
-
+  map(.f = ~
+          # split character strings into individual letters
+          mutate(., x = str_split(value, "")) %>% 
+          # pull out just our list of vectors of individual letters
+          pull(x) %>% 
+          # for each list, reduce down to just unique values that appear in any of the lists (union)
+          reduce(.f = union) %>% 
+          # we really only care about how many, so length()
+          length()
+        ) %>% 
+  # reduce the full list to a single answer by addition
+  reduce(.f = `+`)
+  
 ```
-
-Very complicated and probably an easier way to do this...
 
 The sum for my input for "yes" answers by each group is 6430
 
@@ -134,11 +131,17 @@ For each group, count the number of questions to which everyone answered "yes". 
 ```{r}
 df %>% 
   split(f = as.factor(.$group)) %>% 
-  map(.f = ~ mutate(.,  x = str_split(value, "", simplify = FALSE)) %>% 
-        .$x %>% 
-        reduce(.f = intersect) %>% 
+  map(.f = ~ 
+        # split string into individual characters
+        mutate(.,  x = str_split(value, "")) %>% 
+        # extract just the split strings, themselves a list
+        pull(x) %>% 
+        # for each list set of individual characters, reduce to only those they all share (intersect)
+        reduce(.f = intersect) %>%
+        # count the length (how many unique do they all share)
         length()
   ) %>% 
+  # sum up the full list  
   reduce(`+`)
 ```
 
