@@ -11,3 +11,93 @@ library(tidyverse)
 
 ## Day 7: Handy Haversacks
 
+You land at the regional airport in time for your next flight. In fact, it looks like you'll even have time to grab some food: all flights are currently delayed due to issues in luggage processing.
+
+Due to recent aviation regulations, many rules (your puzzle input) are being enforced about bags and their contents; bags must be color-coded and must contain specific quantities of other color-coded bags. Apparently, nobody responsible for these regulations considered how long they would take to enforce!
+
+For example, consider the following rules:
+
+light red bags contain 1 bright white bag, 2 muted yellow bags.
+dark orange bags contain 3 bright white bags, 4 muted yellow bags.
+bright white bags contain 1 shiny gold bag.
+muted yellow bags contain 2 shiny gold bags, 9 faded blue bags.
+shiny gold bags contain 1 dark olive bag, 2 vibrant plum bags.
+dark olive bags contain 3 faded blue bags, 4 dotted black bags.
+vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.
+faded blue bags contain no other bags.
+dotted black bags contain no other bags.
+
+These rules specify the required contents for 9 bag types. In this example, every faded blue bag is empty, every vibrant plum bag contains 11 bags (5 faded blue and 6 dotted black), and so on.
+
+You have a shiny gold bag. If you wanted to carry it in at least one other bag, how many different bag colors would be valid for the outermost bag? (In other words: how many colors can, eventually, contain at least one shiny gold bag?)
+
+In the above rules, the following options would be available to you:
+
+A bright white bag, which can hold your shiny gold bag directly.
+A muted yellow bag, which can hold your shiny gold bag directly, plus some other bags.
+A dark orange bag, which can hold bright white and muted yellow bags, either of which could then hold your shiny gold bag.
+A light red bag, which can hold bright white and muted yellow bags, either of which could then hold your shiny gold bag.
+So, in this example, the number of bag colors that can eventually contain at least one shiny gold bag is 4.
+
+**How many bag colors can eventually contain at least one shiny gold bag?** (The list of rules is quite long; make sure you get all of it.)
+
+```{r load data}
+df_raw <- 
+  readLines("20-1207_input_handy_haversacks.txt")
+  
+```
+
+
+## Exercise 1
+
+```{r data wrangling}
+df <- 
+  df_raw %>%
+  str_replace_all("bags|bag", "") %>% 
+  as_tibble() %>% 
+    # remove bags with no children
+  filter(!str_detect(value, "no other")) %>% 
+  separate(value, into = c("parent", "child"), sep = "contain") %>% 
+  separate_rows(child, sep = ",") %>% 
+  mutate(child = str_trim(str_replace(child, ".$", ""))) %>% 
+  separate(child, into = c("child_num", "child_descr"), sep = 1) %>% 
+  mutate(across(where(is_character), .fns = str_trim), 
+         child_num = parse_number(child_num)) 
+```
+
+
+```{r function for recursion}
+find_parents <- function(bag_descr, .df = df) {
+  
+  full_list <- vector("character")
+  
+  parent_recursion <- function(dframe = .df, bag = bag_descr){
+    
+    x <- 
+      dframe %>% 
+      filter(child_descr %in% bag) %>% 
+      pull(parent) 
+    
+    if (length(x) == 0) {
+      return("")
+    } else {
+      
+      full_list <<- c(full_list, x)
+      
+      parent_recursion(bag = x)
+    }
+  }
+  
+  parent_recursion()
+  
+  sort(unique(full_list))
+}
+
+find_parents(bag_descr = "shiny gold") %>% 
+  length()
+
+```
+
+
+## Exercise 2
+
