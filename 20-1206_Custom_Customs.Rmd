@@ -54,3 +54,41 @@ In this example, the sum of these counts is `3 + 3 + 3 + 1 + 1` = `11`.
 For each group, count the number of questions to which anyone answered "yes". 
 
 **What is the sum of those counts?**
+
+```{r load data}
+df_raw <- 
+  read_lines(file = "20-1206_input_custom_customs.txt") %>% 
+  as_tibble()
+
+```
+
+## Exercise 1
+
+```{r wrangle}
+df <- 
+  df_raw %>% 
+  mutate(group = cumsum(. == "") + 1) %>% 
+  filter(value != "")
+
+df %>% 
+  split(f = as.factor(.$group)) %>% # create a list of each grouping
+  map(.f = ~ mutate(., x = str_split(value, "", simplify = TRUE)) %>% # split characters into matrix
+        .$x %>%  # extract matrix
+        as.vector() %>% # change matrix to vector
+        .[. != ""] %>%  # remove empty strings
+        unique() %>% # remove duplicate characters
+        sort() %>% # for aesthetics only
+        str_c(collapse = "") %>% # condense to one string
+        str_length() %>% # count length of string
+        as_tibble() # convert to data.frame so we can bind rows below
+      ) %>% 
+  bind_rows() %>% 
+  .$value %>% 
+  sum()
+
+```
+
+Very complicated and probably an easier way to do this...
+
+The sum for my input for "yes" answers by each group is 6430
+
