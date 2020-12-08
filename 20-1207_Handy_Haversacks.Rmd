@@ -171,11 +171,54 @@ find_children("shiny gold")
 
 I tried to figure out the solution from the results of the above (a list of data frames, each one a step lower into the recursin), but I couldn' get it to work.
 
+
+## Full Solution from Twitter 
+
+
 Solution found on Twitter from David Robinson (@drob)
 
 https://twitter.com/drob/status/1336003816395845632/photo/1
 
-```{r}
+```{r david robinson solution all}
+input <- tibble(x = readLines("20-1207_input_handy_haversacks.txt"))
+
+rules <- 
+  input %>% 
+  extract(x, c("color", "contents"), "(.*) bags contain (.*)") %>% 
+  separate_rows(contents, sep = ", ") %>% 
+  extract(contents, c("number", "content_color"), "([\\d]*) (.*) bag", convert = TRUE, remove = FALSE) %>% 
+  filter(!is.na(number))
+
+
+contained_by <- function(cols, ...) {
+  rules %>% 
+    filter(content_color %in% cols) %>% 
+    pull(color)
+}
+
+# exercise 1
+accumulate(.x = 1:100, 
+           .f = contained_by, 
+           .init = "shiny gold") %>% 
+  tail(-1) %>% #exclude first item, which is the original shiny bag
+  unlist() %>% 
+  n_distinct()
+
+
+# exercise 2
+# a recursive function that finds how many bags a bag must contain
+n_contain <- function(col) {
+  r <- 
+    rules %>% 
+    filter(color == col)
+  
+  # each bag counts as one, then all the ones it contains
+  sum(r$number * (1 + map_dbl(r$content_color, n_contain)))
+  
+}
+
+n_contain("shiny gold")
+
 
 ```
 
