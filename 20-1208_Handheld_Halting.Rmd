@@ -1,0 +1,12 @@
+---
+title: '20-1208_Handheld_Halting'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+## Day 8: Handheld Halting
