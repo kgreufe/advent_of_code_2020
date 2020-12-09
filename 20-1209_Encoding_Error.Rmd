@@ -106,7 +106,6 @@ for (i in index_start:length(input)) {
 
 First number that doesn't match puzzle criteria (number isn't a sum of a unique combination of prior 25 numbers) is...
 
-
 `104054607`
 
 
