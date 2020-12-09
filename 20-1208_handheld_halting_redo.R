@@ -74,6 +74,7 @@ for (j in seq_along(input)) {
   
   res <- run_program(input = input_loop, part2 = TRUE)
   
+  # once we find a successful completion, stop the loop and return the result to console
   if (!is.na(res)) {
     print(res)
     break
