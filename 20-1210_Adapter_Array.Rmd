@@ -244,11 +244,14 @@ for (i in unique(t$group)) {
   
   for (j in seq_along(z$rowid)) {
     
-    if(length(z$value) == 1) {
+    # if statement to avoid combn error with only one value provided
+    #  if only one value provided to combn it thinks that is a vector from 1:value
+    if(length(z$value) == 1) { 
       combos <- list(z$value)
+      
     } else {
-      combos <- 
-        combn(z$value, j, simplify = FALSE) 
+      
+      combos <- combn(z$value, j, simplify = FALSE) 
     }
     
     calc <- map(combos, ~ diff(sort(c(int_tbl, .x))) )  
