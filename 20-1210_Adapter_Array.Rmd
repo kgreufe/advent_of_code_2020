@@ -274,3 +274,5 @@ grp_results %>%
 ```
 
 `113387824750592` unique possible combinations
+
+That is, 113 trillion and change
