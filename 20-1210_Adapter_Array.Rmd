@@ -1,0 +1,15 @@
+---
+title: '20-1210_Adapter_Array'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+  #disable scientific notation
+options(scipen = 999)
+```
+
+## Day 10: Adapter Array
