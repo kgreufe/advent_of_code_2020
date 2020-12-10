@@ -122,3 +122,155 @@ y["1"] * y["3"]
 
 ## Exercise 2
 
+To completely determine whether you have enough adapters, you'll need to figure out how many different ways they can be arranged. Every arrangement needs to connect the charging outlet to your device. The previous rules about when adapters can successfully connect still apply.
+
+The first example above (the one that starts with 16, 10, 15) supports the following arrangements:
+
+`(0), 1, 4, 5, 6, 7, 10, 11, 12, 15, 16, 19, (22)`
+
+`(0), 1, 4, 5, 6, 7, 10, 12, 15, 16, 19, (22)`
+
+`(0), 1, 4, 5, 7, 10, 11, 12, 15, 16, 19, (22)`
+
+`(0), 1, 4, 5, 7, 10, 12, 15, 16, 19, (22)`
+
+`(0), 1, 4, 6, 7, 10, 11, 12, 15, 16, 19, (22)`
+
+`(0), 1, 4, 6, 7, 10, 12, 15, 16, 19, (22)`
+
+`(0), 1, 4, 7, 10, 11, 12, 15, 16, 19, (22)``
+
+`(0), 1, 4, 7, 10, 12, 15, 16, 19, (22)`
+
+(The charging outlet and your device's built-in adapter are shown in parentheses.) Given the adapters from the first example, the total number of arrangements that connect the charging outlet to your device is 8.
+
+The second example above (the one that starts with 28, 33, 18) has many arrangements. Here are a few:
+
+`(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,`
+`32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 48, 49, (52)`
+
+`(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,`
+`32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 49, (52)`
+
+`(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,`
+`32, 33, 34, 35, 38, 39, 42, 45, 46, 48, 49, (52)`
+
+`(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,`
+`32, 33, 34, 35, 38, 39, 42, 45, 46, 49, (52)`
+
+`(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,`
+`32, 33, 34, 35, 38, 39, 42, 45, 47, 48, 49, (52)`
+
+`(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,`
+`46, 48, 49, (52)`
+
+`(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,`
+`46, 49, (52)`
+
+`(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,`
+`47, 48, 49, (52)`
+
+`(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,`
+`47, 49, (52)`
+
+`(0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,`
+`48, 49, (52)`
+
+In total, this set of adapters can connect the charging outlet to your device in 19208 distinct arrangements.
+
+You glance back down at your bag and try to remember why you brought so many adapters; there must be *more than a trillion* valid ways to arrange them! Surely, there must be an efficient way to count the arrangements.
+
+What is the total number of distinct ways you can arrange the adapters to connect the charging outlet to your device?
+
+```{r}
+# req is for elements that we have to have
+# first is the first and last elements (outlet and computer adapter)
+req <- c(1, length(x))
+
+# any element that has a jolt diff of 3 will require we keep both elements that constitute that difference (we can't have a jolt > 3)
+
+# for the first in the pair for jolt 3
+fp <- which(diff(x) == 3)
+
+# add the first and second in the pair (first in pair + 1 ) to required values
+
+req <- 
+  c(req, fp, fp + 1) %>% 
+  unique() %>% 
+  sort()
+
+req
+
+
+# t will be our table of optional values
+# that we may or may not be able to remove
+# I'm going to use a for loop for each "grouping" 
+#   wherein each "group" is between two other required values
+
+t <- 
+  as_tibble(x = x) %>% 
+  rowid_to_column() %>% 
+  mutate(req = if_else(rowid %in% req, "Y", "n"),
+         group = cumsum(str_detect(req, "Y"))) %>% 
+  filter(req == "n")
+  
+# 20 distinct groups
+n_distinct(t$group)
+unique(t$group)
+
+
+
+# track results of loop
+grp_results <- 
+  distinct(select(t, group)) %>% 
+  mutate(ncombos = 0)
+
+for (i in unique(t$group)) {
+  
+  # z is our group of values we'll be looking at
+  z <- t %>% filter(group == i)
+  
+  # int_tbl is our full list with our grouping values removed
+  int_tbl <- x[-z$rowid]
+  
+  # does it work removing all the group values?
+  if (sum(diff(int_tbl) > 3) == 0) {
+    grp_results$ncombos[grp_results$group == i] <- 
+      grp_results$ncombos[grp_results$group == i] + 1
+  }
+  
+  
+  # now we'll loop through each groups unique combinations
+  
+  for (j in seq_along(z$rowid)) {
+    
+    if(length(z$value) == 1) {
+      combos <- list(z$value)
+    } else {
+      combos <- 
+        combn(z$value, j, simplify = FALSE) 
+    }
+    
+    calc <- 
+      map(combos, 
+          ~ sort(c(int_tbl, .x)) %>% 
+            diff() )  
+    
+    n <- reduce(map(calc, ~ sum(.x > 3) == 0), `+`) 
+    
+    grp_results$ncombos[grp_results$group == i] <- 
+      grp_results$ncombos[grp_results$group == i] + n
+    
+  }
+  
+}
+
+grp_results %>% 
+  # filter any that don't have any combos
+  filter(ncombos > 0) %>% 
+  pull(ncombos) %>% 
+  prod()
+
+```
+
+`113387824750592` unique possible combinations
