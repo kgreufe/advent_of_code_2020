@@ -251,10 +251,7 @@ for (i in unique(t$group)) {
         combn(z$value, j, simplify = FALSE) 
     }
     
-    calc <- 
-      map(combos, 
-          ~ sort(c(int_tbl, .x)) %>% 
-            diff() )  
+    calc <- map(combos, ~ diff(sort(c(int_tbl, .x))) )  
     
     n <- reduce(map(calc, ~ sum(.x > 3) == 0), `+`) 
     
@@ -266,7 +263,7 @@ for (i in unique(t$group)) {
 }
 
 grp_results %>% 
-  # filter any that don't have any combos
+  # filter any that don't have any combos b/c multiplying by zero would result in zero
   filter(ncombos > 0) %>% 
   pull(ncombos) %>% 
   prod()
