@@ -8,7 +8,7 @@ editor_options:
 ```{r setup, include=FALSE}
 library(tidyverse)
 
-  #disable scientific notation
+#disable scientific notation
 options(scipen = 999)
 ```
 
@@ -197,8 +197,160 @@ exercise1 <- reduce(map(res, ~ sum(. == "#")), `+`)
 exercise1
 ```
 
-`2338` seats occupied
+`2338` seats end up occupied
 
 ## EXERCISE 2
 
+I did exercise 1 using lists and it wasn't super easy
 
+I'll try exercise 2 using a character matrix
+
+```{r}
+mat <- 
+  reduce(input, c) %>% 
+  matrix(nrow = length(input)) 
+
+reduce_eval <- function(string) {
+  str_c(string, collapse = "") %>% 
+    str_match(., "(L|#)") %>% 
+    .[[1]] %>% 
+    replace_na(., "L")  == "#"
+}
+
+n2 <- 0
+
+seat_assign_diagonal <- function(df) {
+  
+  # top left across, then down
+  # [row, col]
+  nr <- nrow(df)
+  nc <- ncol(df)
+  
+  intermediate <- 
+    rep("^", nr * nc) %>% 
+    matrix(ncol = nc)
+  
+  seat_symb <- c("L", "#", ".")
+  
+  for (i in 1:nr) {
+    
+    for (j in 1:nc) {
+      
+      seat <- df[i,j]
+      
+      res <- vector("integer", 8)
+      
+      # up (1)
+      if (i == 1) { # first row
+        res[1] <- 0
+      } else {
+        res[1] <- if_else(df[(i-1):1, j] %>% reduce_eval(), 1, 0)
+      }
+      
+      # down (5)
+      if (i == nr) { # last row
+        res[5] <- 0
+      } else {
+        res[5] <- if_else(df[(i+1):nr, j] %>% reduce_eval(), 1, 0)
+      }
+      
+      # right (3)
+      if (j == nc) {
+        res[3] <- 0
+      } else {
+        res[3] <- if_else(df[i, (j+1):nc] %>% reduce_eval(), 1, 0)
+      }
+      
+      # left (7)
+      if (j == 1) {
+        res[7] <- 0
+      } else {
+        res[7] <- if_else(df[i, (j-1):1] %>% reduce_eval(), 1, 0)
+      }
+      
+      # up/right diagonal (2)
+      if (i == 1 || j == nc) {
+        res[2] <- 0
+      } else {
+        res[2] <- 
+          if_else(df[1:(i-1), (j+1):nc, drop = FALSE] %>% 
+                    .[nrow(.):1, , drop = FALSE] %>% #rotate
+                    diag() %>% 
+                    reduce_eval(), 1, 0)
+      } 
+      
+      # down/right diagonal (4)
+      if (i == nr || j == nc) {
+        res[4] <- 0
+      } else {
+        res[4] <- 
+          if_else(df[(i+1):nr, (j+1):nc, drop = FALSE] %>% 
+                    diag() %>%  # no rotation need this direction
+                    reduce_eval(), 1, 0)
+      }
+      
+      
+      # down/left diagonal (6)
+      if (i == nr || j == 1) {
+        res[6] <- 0
+      } else {
+        res[6] <- 
+          if_else(df[(i+1):nr, 1:(j-1), drop = FALSE] %>% 
+                    .[, ncol(.):1, drop = FALSE] %>% #rotate
+                    diag() %>% 
+                    reduce_eval(), 1, 0)
+      }
+      
+      
+      # up/left diagonal (8)
+      if (i == 1 || j == 1) {
+        res[8] <- 0
+      } else {
+        res[8] <- 
+          if_else(df[1:(i-1), 1:(j-1), drop = FALSE] %>% 
+                    .[nrow(.):1, ncol(.):1, drop = FALSE] %>% #rotate
+                    diag() %>% 
+                    reduce_eval(), 1, 0)
+      }
+      
+      # seat evaluation
+      if (seat == ".") {
+        intermediate[i,j] <- "."
+        
+      } else if (seat == "L" && sum(res) == 0) {
+        intermediate[i,j] <- "#"
+        
+      } else if (seat == "#" && sum(res) >= 5) {
+        intermediate[i,j] <- "L"
+        
+      } else {
+        intermediate[i,j] <- seat
+      }
+      
+      
+    } # end column loop (j)
+    
+  } # end row loop (i)
+  
+  n2 <<- n2 + 1
+  print(n2)
+  
+  if (identical(intermediate, df)) {
+    return(intermediate)
+  } else {
+    seat_assign_diagonal(intermediate)
+  }
+  
+} # end function
+
+```
+
+```{r}
+res2 <- seat_assign_diagonal(mat)
+
+sum(res2 == "#")
+
+
+```
+
+I got 2088, but that's incorrect
