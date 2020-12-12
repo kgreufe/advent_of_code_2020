@@ -61,6 +61,46 @@ input <- read_lines("20-1212_input_rain_risk.txt")
 
 ## EXERCISE 1
 
+```{r}
+# start position
+position <- c(x = 0, y = 0, deg = 90)
+
+
+
+step_ship <- function(pos, inst) {
+  
+  mult <- c(N = 1, E = 1, S = -1, W = -1, L = -1, R = 1)
+  
+  eval <- c(N = 'y', S = 'y', E = 'x', W = 'x', L = 'deg', R = 'deg')
+  
+  cardinal <- c(N = 0, E = 90, S = 180, W = 270)
+  
+  split <- str_split_fixed(inst, "", n = 2)
+  
+  if (split[1] == "F") {
+    split[1] <- names(cardinal[cardinal == pos["deg"]])
+  }
+  
+  pos[eval[split[1]]] <-
+    pos[eval[split[1]]] + 
+    (as.numeric(split[2]) * mult[split[1]])
+  
+  if (pos["deg"] < 0) { pos["deg"] <- 360 + pos["deg"] }
+  
+  if (pos["deg"] >= 360) { pos["deg"] <- pos["deg"] - 360 }
+  
+  pos
+}
+
+
+res1 <- reduce(.x = input, .f = step_ship, .init = position)
+
+sum(abs(res1[1:2]))
+```
+
+Position ends up being +426 in the x-axis, -478 in the y-axis. 
+Absolute value of those two added together is `904`
+
 
 
 ## EXERCISE 2
