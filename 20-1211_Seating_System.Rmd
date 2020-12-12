@@ -206,9 +206,7 @@ I did exercise 1 using lists and it wasn't super easy
 I'll try exercise 2 using a character matrix
 
 ```{r}
-mat <- 
-  reduce(input, c) %>% 
-  matrix(nrow = length(input)) 
+mat <- reduce(input, rbind) 
 
 reduce_eval <- function(string) {
   str_c(string, collapse = "") %>% 
@@ -345,7 +343,7 @@ seat_assign_diagonal <- function(df) {
 
 ```
 
-```{r}
+```{r eval=FALSE}
 res2 <- seat_assign_diagonal(mat)
 
 sum(res2 == "#")
@@ -353,21 +351,76 @@ sum(res2 == "#")
 
 ```
 
-I got 2088, but that's incorrect
+I got `2088`, but that's *incorrect*
 
+
+## Alternative solution EXERCISE 1
 
 ```{r}
-foo <- mat[1:10, 1:10]
+mat <- reduce(input, rbind) 
 
-find_neighbor_immediate <- function(mat, x, y) {
+
+find_neighbor_immediate <- function(m, x, y) {
   
-  mat[x-1, (y-1):(y+1)]  %>% as.vector() %>% . == "#" %>% print()
-  mat[x, c((y-1),(y+1))] %>% as.vector() %>% .[. == "#"] %>% print()
-  mat[x+1, (y-1):(y+1)]  %>% as.vector() %>% .[. == "#"] %>% print()
+  tmp_mat <- m
+  
+  tmp_mat[x, y] <- ""
+  
+  tmp_mat[seq(max(x-1, 1), min(x+1, nrow(m))), 
+          seq(max(y-1, 1), min(y+1, ncol(m)))] 
   
 }
 
-find_neighbor_immediate(foo, 1, 1)
+# m_start <- mat
 
+n1 <- 0
+
+exercise1 <- function(m_start) {
+  
+  n1 <<- n1 + 1
+  
+  print(n1)
+  
+  m_replace <- m_start
+  
+  for (i in seq_len(nrow(m_start))) {
+    
+    for (j in seq_len(ncol(m_start))) {
+      
+      seat <- m_start[i, j]
+      
+      if (seat == ".") next
+      
+      nbors <- find_neighbor_immediate(m_start, i, j) 
+      nbors <- sum(nbors == "#")
+      
+      # if seat is empty and no adjacent seats occupied, seat becomes occupied
+      if (seat == "L" && nbors == 0) m_replace[i, j] <- "#"
+        
+        # if seat is occupied and four or more adjacent seats are also occupied, seat becomes empty
+      if (seat == "#" && nbors >= 4) m_replace[i, j] <- "L"
+      
+    } # col loop
+    
+  } # row loop
+  
+  if (identical(m_start, m_replace)) {
+    return(m_replace)
+  } else {
+    exercise1(m_start = m_replace)
+  }
+  
+  
+} # end function
+
+
+#res1
+
+res1 <- exercise1(m_start = mat)
+
+sum(res1 == "#")
 ```
 
+`2338` seats occupied 
+
+## Alternate Solution EXERCISE 2
