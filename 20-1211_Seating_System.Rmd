@@ -206,7 +206,8 @@ I did exercise 1 using lists and it wasn't super easy
 I'll try exercise 2 using a character matrix
 
 ```{r}
-mat <- reduce(input, rbind) 
+# VERY IMPORTANT TO DO THE "byrow = TRUE", else it will create the matrix filling cols first
+mat <- reduce(input, c) %>% matrix(., nrow = length(input), byrow = TRUE)
 
 reduce_eval <- function(string) {
   str_c(string, collapse = "") %>% 
@@ -343,7 +344,7 @@ seat_assign_diagonal <- function(df) {
 
 ```
 
-```{r eval=FALSE}
+```{r exercise 2 execute}
 res2 <- seat_assign_diagonal(mat)
 
 sum(res2 == "#")
@@ -354,10 +355,16 @@ sum(res2 == "#")
 I got `2088`, but that's *incorrect*
 
 
+Turns out, I created the intial matrix incorrectly (hadn't had `byrows = TRUE` set).
+When I create this matrix correctly it returns `2134` which is, in fact, the right answer.
+That said, this code takes a LONG time to run. More efficient solution below. 
+
+
+
 ## Alternative solution EXERCISE 1
 
-```{r}
-mat <- reduce(input, rbind) 
+```{r alt exercise 1}
+mat <- reduce(input, c) %>% matrix(., nrow = length(input), byrow = TRUE)
 
 
 find_neighbor_immediate <- function(m, x, y) {
@@ -396,8 +403,8 @@ exercise1 <- function(m_start) {
       
       # if seat is empty and no adjacent seats occupied, seat becomes occupied
       if (seat == "L" && nbors == 0) m_replace[i, j] <- "#"
-        
-        # if seat is occupied and four or more adjacent seats are also occupied, seat becomes empty
+      
+      # if seat is occupied and four or more adjacent seats are also occupied, seat becomes empty
       if (seat == "#" && nbors >= 4) m_replace[i, j] <- "L"
       
     } # col loop
@@ -424,3 +431,99 @@ sum(res1 == "#")
 `2338` seats occupied 
 
 ## Alternate Solution EXERCISE 2
+
+```{r alt exercise 2}
+mat <- reduce(input, c) %>% matrix(., nrow = length(input), byrow = TRUE)
+
+
+find_neighbor_extended <- function(m, x, y, xadd, yadd) {
+  
+  if (xadd == 0 && yadd == 0) stop(simpleError("Either xadd or yadd must not be zero"))
+  
+  res <- "."
+  
+  # step in matrix given inputs
+  i <- x + xadd
+  j <- y + yadd
+  
+  while (i >= 1 && j >= 1 && i <= nrow(m) && j <= ncol(m)) {
+    
+    value <- m[i,j]
+    
+    if (value != ".") {
+      res <- value
+      break
+    } 
+    
+    i <- i + xadd
+    j <- j + yadd
+    
+  }
+  res
+}
+
+
+find_neighbor_extended_all <- function(m, x, y) {
+  
+  north     <- find_neighbor_extended(m, x, y, xadd = -1, yadd = 0)
+  northeast <- find_neighbor_extended(m, x, y, xadd = -1, yadd = 1)
+  east      <- find_neighbor_extended(m, x, y, xadd = 0 , yadd = 1)
+  southeast <- find_neighbor_extended(m, x, y, xadd = 1 , yadd = 1)
+  south     <- find_neighbor_extended(m, x, y, xadd = 1 , yadd = 0)
+  southwest <- find_neighbor_extended(m, x, y, xadd = 1 , yadd = -1)
+  west      <- find_neighbor_extended(m, x, y, xadd = 0 , yadd = -1)
+  northwest <- find_neighbor_extended(m, x, y, xadd = -1, yadd = -1)
+  
+  c(north, northeast, east, southeast, south, southwest, west, northwest)
+}
+
+
+
+n2 <- 0
+
+
+exercise2 <- function(m_start) {
+  
+  n2 <<- n2 + 1
+  print(n2)
+  
+  m_replace <- m_start
+  
+  for (i in seq_len(nrow(m_start))) {
+    
+    for (j in seq_len(ncol(m_start))) {
+      
+      pos <- m_start[i, j]
+      
+      if (pos == ".") next
+      
+      nbors <- find_neighbor_extended_all(m_start, i, j)
+      nbors <- sum(nbors == "#")
+      
+      # if seat is empty and it can't "see" any other taken seats, seat will become occupied
+      if (pos == "L" && nbors == 0) m_replace[i, j] <- "#"
+      
+      # if seat is taken and they can "see" at least 5 other taken seats, seat will vacate
+      if (pos == "#" && nbors >= 5) m_replace[i, j] <- "L"
+      
+    } # col loop
+    
+  } # row loop
+  
+  if (identical(m_start, m_replace)) {
+    return(m_replace)
+  } else {
+    exercise2(m_replace)
+  }
+  
+} # end function
+
+res2 <- exercise2(mat)
+
+res2 <- sum(res2 == "#")
+
+res2
+
+```
+
+`2134` seats taken
