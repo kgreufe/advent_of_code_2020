@@ -354,3 +354,20 @@ sum(res2 == "#")
 ```
 
 I got 2088, but that's incorrect
+
+
+```{r}
+foo <- mat[1:10, 1:10]
+
+find_neighbor_immediate <- function(mat, x, y) {
+  
+  mat[x-1, (y-1):(y+1)]  %>% as.vector() %>% . == "#" %>% print()
+  mat[x, c((y-1),(y+1))] %>% as.vector() %>% .[. == "#"] %>% print()
+  mat[x+1, (y-1):(y+1)]  %>% as.vector() %>% .[. == "#"] %>% print()
+  
+}
+
+find_neighbor_immediate(foo, 1, 1)
+
+```
+
