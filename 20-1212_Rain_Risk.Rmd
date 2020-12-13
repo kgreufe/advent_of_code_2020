@@ -61,7 +61,7 @@ input <- read_lines("20-1212_input_rain_risk.txt")
 
 ## EXERCISE 1
 
-```{r}
+```{r exercise 1}
 # start position
 position <- c(x = 0, y = 0, deg = 90)
 
@@ -105,4 +105,95 @@ Absolute value of those two added together is `904`
 
 ## EXERCISE 2
 
+Before you can give the destination to the captain, you realize that the actual action meanings were printed on the back of the instructions the whole time.
 
+Almost all of the actions indicate how to move a *waypoint* which is relative to the ship's position:
+
+- Action `N` means to move the waypoint `north` by the given value.
+- Action `S` means to move the waypoint `south` by the given value.
+- Action `E` means to move the waypoint `east` by the given value.
+- Action `W` means to move the waypoint `west` by the given value.
+- Action `L` means to rotate the waypoint around the ship `left (counter-clockwise)` the given number of degrees.
+- Action `R` means to rotate the waypoint around the ship `right (clockwise)` the given number of degrees.
+- Action `F` means to move `forward` to the waypoint a number of times equal to the given value.
+
+The waypoint starts `10 units east and 1 unit north` relative to the ship. The waypoint is relative to the ship; that is, if the ship moves, the waypoint moves with it.
+
+For example, using the same instructions as above:
+
+- `F10` moves the ship to the waypoint 10 times (a total of `100 units east and 10 units north`), leaving the ship at east 100, north 10. The waypoint stays 10 units east and 1 unit north of the ship.
+- `N3` moves the waypoint 3 units north to `10 units east and 4 units north of the ship`. The ship remains at `east 100, north 10`.
+- `F7` moves the ship to the waypoint 7 times (a total of `70 units east and 28 units north`), leaving the ship at east 170, north 38. The waypoint stays 10 units east and 4 units north of the ship.
+- `R90` rotates the waypoint around the ship clockwise 90 degrees, moving it to `4 units east and 10 units south of the ship`. The ship remains at east 170, north 38.
+- `F11` moves the ship to the waypoint 11 times (a total of `44 units east and 110 units south`), leaving the ship at `east 214, south 72`. The waypoint stays 4 units east and 10 units south of the ship.
+
+After these operations, the ship's Manhattan distance from its starting position is `214 + 72` = `286.`
+
+Figure out where the navigation instructions actually lead. 
+
+What is the Manhattan distance between that location and the ship's starting position?
+
+
+```{r exercise 2}
+start <- c(xship = 0, 
+           yship = 0, 
+           xwp = 10, 
+           ywp = 1)
+
+
+
+step_waypoint <- function(pos, inst) {
+  
+  split <- str_split_fixed(inst, "", n = 2)
+  
+  if (split[1] %in% c("L", "R") && as.numeric(split[2]) == 270) { # L270 is the same as R90, ditto R270 and L90
+    split[1] <- if_else(split[1] == "L", "R", "L")
+    split[2] <- "90"
+  }
+  
+  
+  if (split[1] == "F") {
+    pos[c("xship", "yship")] <- 
+      pos[c("xship", "yship")] +
+      pos[c("xwp", "ywp")] * as.numeric(split[2])
+    
+  } else if (split[1] %in% c("N", "S")) {
+    pos["ywp"] <- 
+      pos["ywp"] + 
+      if_else(split[1] == "N", as.numeric(split[2]), -as.numeric(split[2]))
+    
+  } else if (split[1] %in% c("E", "W")) {
+    pos["xwp"] <- 
+      pos["xwp"] + 
+      if_else(split[1] == "E", as.numeric(split[2]), -as.numeric(split[2]))
+    
+  } else if (split[1] %in% c("L", "R")) {
+    
+    if (split[2] == "180") { # 180 degree flips just swap the signs in both x and y directions
+      pos[c("xwp", "ywp")] <- pos[c("xwp", "ywp")] * -1
+      
+      # we've already removed 270 rotations, so we should only have to deal with 90's now
+    } else if (split[1] == "R") {
+      # right 90 swaps the y position to x, and the y position becomes the inverse of the prior x position
+      pos[c("xwp", "ywp")] <- c(pos["ywp"], -pos["xwp"])
+      
+    } else if (split[1] == "L") {
+      # left 90 swaps the x position to y, and the x position becomes the inverse of the prior y position
+      pos[c("xwp", "ywp")] <- c(-pos["ywp"], pos["xwp"])
+      
+    }
+    
+  }
+  
+  pos
+  
+}
+
+res2 <- reduce(.x = input, .f = step_waypoint, .init = start)
+
+sum(abs(res2[c("xship", "yship")]))
+
+```
+
+After all those instructions, the ship ends up at x-position -10,766 and y-position -7981. 
+The absolute sum of those two values is `18,747`
