@@ -355,8 +355,8 @@ sum(res2 == "#")
 I got `2088`, but that's *incorrect*
 
 
-Turns out, I created the initial matrix incorrectly (hadn't had `byrows = TRUE` set).
-When I create this matrix correctly it returns `2134` which is, in fact, the right answer.
+Turns out, I *created the initial matrix incorrectly* (hadn't had `byrow = TRUE` set).
+When I create this matrix correctly it returns `2134` which is, in fact, *the right answer*.
 That said, this code takes a LONG time to run. More efficient solution below. 
 
 
