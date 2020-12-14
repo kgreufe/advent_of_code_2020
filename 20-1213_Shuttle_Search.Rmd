@@ -63,10 +63,39 @@ The earliest bus you could take is bus ID `59.` It doesn't depart until timestam
 
 ## INPUT DATA
 
+```{r input}
+input_raw <- 
+  read_lines("20-1213_input_shuttle_service.txt")
+
+depart_min <- as.integer(input_raw[1])
+buses_all <- input_raw[2]
+buses_active <- 
+   str_split(buses_all, ",")[[1]] %>% 
+     .[. != "x"] %>% 
+     as.integer() %>% 
+     sort()
+
+```
 
 
 ## EXERCISE 1
 
+```{r exercise 1}
+
+cross_min <- 
+  ceiling(depart_min / min(buses_active))
+
+first_bus <- 
+  crossing(bus = buses_active, 
+         mult = 1:cross_min) %>% 
+  mutate(deptime = bus * mult, 
+         diff = deptime - depart_min) %>% 
+  filter(diff >= 0) %>% 
+  filter(diff == min(diff))
+
+first_bus$bus * first_bus$diff
+
+```
 
 
 ## EXERCISE 2
