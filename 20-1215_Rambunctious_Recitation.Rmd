@@ -141,11 +141,18 @@ run_game_2 <- function(start = input, n) {
   
   # index needs to be one longer than what we're looking for as index 1 is actually tracking zero
   prior_index <- rep(NA, (n + 1))
+  
+  # first index for our input will just be where they occur in the input vector
   prior_index[(start + 1)] <- seq_along(start)
   
+  # lookup vector on whether we've seen a value before
   seen <- rep(FALSE, (n+1))
+  
+  # set our input values to all having been seen before
   seen[(start + 1)] <- TRUE
   
+  # main loop
+  # start at the position after our input as we don't need to evaluate the input (taken care of above)
   for (i in (length(start) + 1):length(df)) {
     
     if (i %% 50000 == 0) print(str_c("Step ", i, " of ~ ", n))
