@@ -7,6 +7,8 @@ editor_options:
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(scales)
+library(tictoc)
 
 #disable scientific notation
 options(scipen = 999)
@@ -80,6 +82,7 @@ input <-
 
 run_game <- function(start = input, n) {
   
+  tictoc::tic("Time to complete")
   
   df <- c(start, rep(NA, n-length(start)))
   
@@ -104,7 +107,8 @@ run_game <- function(start = input, n) {
     
   }
   
-  df[n]
+  tictoc::toc()
+  return(df[n])
 }
 
 run_game(n = 2020)
@@ -136,6 +140,7 @@ Impressed, the Elves issue you a challenge: determine the *30000000th* number sp
 
 run_game_2 <- function(start = input, n) {
   
+  tictoc::tic("Time to complete")
   
   df <- c(start, rep(NA, n-length(start)))
   
@@ -151,11 +156,14 @@ run_game_2 <- function(start = input, n) {
   # set our input values to all having been seen before
   seen[(start + 1)] <- TRUE
   
+  # for printing progress
+  pcts <- ceiling(seq(0, n, length.out = 21))
+  
   # main loop
   # start at the position after our input as we don't need to evaluate the input (taken care of above)
   for (i in (length(start) + 1):length(df)) {
     
-    if (i %% 50000 == 0) print(str_c("Step ", i, " of ~ ", n))
+    if (i %in% pcts) print(str_c(scales::percent(i/n), " complete"))
     
     # if this is our first time seeing this number, new value is zero.  update prior index to where we saw it
     if (seen[(df[i-1] + 1)] == FALSE) {
@@ -176,9 +184,15 @@ run_game_2 <- function(start = input, n) {
     
   }
   
+  tictoc::toc()
   df[n]
 }
 
-#should be 7
+
 run_game_2(n = 30000000)
+
+# this function for exercise 2 also works for exercise 1
+# run_game_2(n = 2020)
+
+
 ```
