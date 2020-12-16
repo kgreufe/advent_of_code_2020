@@ -77,18 +77,38 @@ ticket_fields <-
              range_all = map2(range1_comb, range2_comb, c)) 
       
 
+my_ticket <- 
+  str_split(input_raw[[2]], "\\n")[[1]][[2]] %>% 
+  str_split(., ",") %>% 
+  .[[1]] %>% 
+  as.integer()
 
+
+# NA coercion warning okay -- that's the header line and an empty line at the end
+neighbor_tickets <- 
+  str_split(input_raw[[3]], "\\n")[[1]] %>% 
+  map(., ~ str_split(., ",") %>% .[[1]] %>% as.integer()) %>% 
+  .[!is.na(.)]
+  
 ```
 
 
 ## EXERCISE 1
 
 ```{r exercise 1}
+all_valid_nums <- 
+  ticket_fields$range_all %>% 
+  reduce(., c) %>% 
+  unique() %>% 
+  sort()
 
+neighbor_tickets %>% 
+  map(., ~ .[!(. %in% all_valid_nums)]) %>% 
+  reduce(., sum)
 
 ```
 
-
+Summing up any field on any ticket that does not match any valid range I get the answer of `22977`
 
 ## EXERCISE 2 NARRATIVE
 
