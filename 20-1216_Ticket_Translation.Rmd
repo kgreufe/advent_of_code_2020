@@ -112,10 +112,129 @@ Summing up any field on any ticket that does not match any valid range I get the
 
 ## EXERCISE 2 NARRATIVE
 
+Now that you've identified which tickets contain invalid values, *discard those tickets entirely*. Use the remaining valid tickets to determine which field is which.
+
+Using the valid ranges for each field, determine what order the fields appear on the tickets. The order is consistent between all tickets: if *seat* is the third field, it is the third field on every ticket, including your ticket.
+
+For example, suppose you have the following notes:
+
+`class: 0-1 or 4-19`
+`row: 0-5 or 8-19`
+`seat: 0-13 or 16-19`
+
+`your ticket:`
+`11,12,13`
+
+`nearby tickets:`
+`3,9,18`
+`15,1,5`
+`5,14,9`
+
+Based on the *nearby tickets* in the above example, the first position must be row, the second position must be class, and the third position must be seat; you can conclude that in your ticket, *class is 12, row is 11, and seat is 13*.
+
+Once you work out which field is which, look for the *six fields on your ticket* that start with the word `departure`. 
+
+*What do you get if you multiply those six values together?*
 
 
 ## EXERCISE 2
 
 ```{r exercise 2}
+# first, discard invalid tickets
+
+invalid_tix_index <- 
+  neighbor_tickets %>% 
+  map(., ~ !(. %in% all_valid_nums)) %>% 
+  map(., ~ sum(.) %>% as.logical) %>% 
+  unlist()
+
+valid_tickets <- 
+  neighbor_tickets[!invalid_tix_index]
+
+ticket_fields <- 
+  ticket_fields %>% 
+  mutate(index = 0) %>% 
+  relocate(label, index)
+
+
+len_ticket_fields <- length(valid_tickets[[1]])
+
+res2 <- vector("list", len_ticket_fields)
+
+
+for (i in seq_len(len_ticket_fields)) {
+# for (i in 1) {
+  
+  val <- 
+    valid_tickets %>% 
+    map(., ~ pluck(., i)) %>% 
+    reduce(., c) %>% 
+    unique() 
+  
+  test_fields <- 
+    ticket_fields$range_all %>% 
+    map(., ~ `%in%` (val, .x)) %>% 
+    # if all values match at that position for every ticket, min value will be 1
+    map(., min) %>% 
+    reduce(., c)
+
+  res2[[i]] <- test_fields
+  
+}
+
+res2
+```
+
+
+```{r}
+# we should now have which field locations on the ticket itself (element in list) match which ticket value ranges (elements in vectors in list)
+
+# loop through finding each instance where there's only one field that matches.  
+n <- 0
+
+repeat {
+
+  loop_eval <-
+    res2 %>%
+    map(., sum) %>%
+    unlist()
+
+  if (sum(loop_eval) == 0) break
+
+
+  n <- n + 1
+  print(n)
+
+  # which field location matches
+  field_index <- 
+    which(loop_eval == 1)
+   
+  # which value range does this match
+   value_index <- 
+     res2[[field_index]] %>%
+     which(x = . == 1)
+   
+   ticket_fields[value_index, ]$index <- field_index
+
+  # set the field we found to zero, loop will find next one that has only one match
+  for (j in seq_along(res2)) {
+
+    res2[[j]][value_index] <- 0
+
+  }
+
+}
+
+
+departure_indices <-
+  ticket_fields %>%
+  filter(str_detect(label, "dep")) %>%
+  pull(index) %>%
+  as.integer()
+
+my_ticket[departure_indices] %>%
+  prod()
 
 ```
+
+The produce of my ticket's values at the departure indices is `998358379943`
