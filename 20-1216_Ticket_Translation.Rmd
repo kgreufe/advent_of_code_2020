@@ -190,7 +190,6 @@ res2
 # we should now have which field locations on the ticket itself (element in list) match which ticket value ranges (elements in vectors in list)
 
 # loop through finding each instance where there's only one field that matches.  
-n <- 0
 
 repeat {
 
@@ -200,10 +199,6 @@ repeat {
     unlist()
 
   if (sum(loop_eval) == 0) break
-
-
-  n <- n + 1
-  print(n)
 
   # which field location matches
   field_index <- 
