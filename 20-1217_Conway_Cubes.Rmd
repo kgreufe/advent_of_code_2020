@@ -1,0 +1,40 @@
+---
+title: '20-1217_Conway_Cubes'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+#disable scientific notation
+options(scipen = 999)
+```
+
+## Day 17: Conway Cubes
+
+
+## INPUT
+
+```{r input}
+
+```
+
+
+## EXERCISE 1
+
+```{r exercise 1}
+
+```
+
+## EXERCISE 2 NARRATIVE
+
+
+
+## EXERCISE 2
+
+```{r exercise 2}
+
+```
+
