@@ -376,11 +376,114 @@ Forgot to take into account that the grid expands in the x and y plane as well a
 
 ## EXERCISE 2 NARRATIVE
 
-
+Same as before, but in four dimensions.
 
 ## EXERCISE 2
 
 ```{r exercise 2}
+
+sample_data <- 
+  matrix(str_split(".#...####", "")[[1]], nrow = 3, byrow = TRUE)
+# need to pad by our steps...6 in all directions
+
+input_matrix <- 
+  str_split(input_raw , "") %>% reduce(., c) %>% 
+  matrix(nrow = 8, byrow = TRUE)
+
+# can use this to swap between sample and actual data
+data_cube <- input_matrix
+
+# array indices are [row, column, slice, hypercube]
+
+# 8y x 8x x 13z x 13h
+max_y <- nrow(data_cube) + (6 * 2)
+max_x <- ncol(data_cube) + (6 * 2)
+max_z <- (2 * 6) + 1
+max_h <- (2 * 6) + 1
+
+# create initial array, first with all inactive
+state_hcube <- rep(".", prod(max_x, max_y,  max_z, max_h))
+dim(state_hcube) <- c(max_y, max_x, max_z, max_h)
+
+# our initial position should be the middle z "slice" and h "cube"
+state_hcube[7:(7 + (nrow(data_cube) - 1)),
+            7:(7 + (ncol(data_cube) - 1)),
+            ceiling(max_z / 2), 
+            ceiling(max_h / 2)] <- data_cube
+
+# state_hcube[, , 8, 8]
+
+find_neighbors_hcube <- function(arr, y, x, z, h) {
+  
+  # if the spot is active already, subtract one from final sum so we don't include it
+  subtract_spot <- if_else(arr[y, x, z, h] == "#", -1, 0)
+  
+  delta <- -1:1
+  
+  # find deltas
+  delta_y <- y + delta
+  delta_x <- x + delta
+  delta_z <- z + delta
+  delta_h <- h + delta
+  
+  # ensure deltas are within bounds
+  delta_y <- delta_y[between(delta_y, 1, max_y)]
+  delta_x <- delta_x[between(delta_x, 1, max_x)]
+  delta_z <- delta_z[between(delta_z, 1, max_z)]
+  delta_h <- delta_h[between(delta_h, 1, max_h)]
+  
+  # find neighbors and subtract 1 is spot counts as active 
+  sum(arr[delta_y, delta_x, delta_z, delta_h] == "#") + subtract_spot
+  
+}
+
+
+
+conway_cycle_cube <- function(.arr, ...) {
+  
+  dx <- dim(.arr)
+  
+  result <- .arr
+  
+  for (i in seq_len(dx[1])) { # y, rows
+    for (j in seq_len(dx[2])){ # x, cols
+      for (k in seq_len(dx[3])) { # z, slices
+        for (l in seq_len(dx[4])) { # h, hypercubes
+          
+          
+          
+          spot <- .arr[i, j, k, l]
+          
+          nbors <- find_neighbors_hcube(.arr, i, j, k, l)
+          
+          if (spot == "#") {
+            if (nbors %in% c(2,3)) {
+              next
+            } else {
+              result[i, j, k, l] <- "."
+            }
+          } else if (spot == ".") {
+            if (nbors == 3) {
+              result[i, j, k, l] <- "#"
+            } else {
+              next
+            }
+          }
+        } # end of h hypercube loop
+      } # end z slice loop
+    } # end x col loop
+  } # end y row loop
+  
+  return(result)
+  
+}
+
+# conway_cycle_cube(state_hcube)
+
+res2_cube <- 
+  reduce(1:6, conway_cycle_cube, .init = state_hcube)
+
+sum(res2_cube == "#")
 
 ```
 
