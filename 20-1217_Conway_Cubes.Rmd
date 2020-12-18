@@ -195,7 +195,7 @@ input <-
 
 ## EXERCISE 1
 
-```{r exercise 1}
+```{r exercise 1, eval=FALSE}
 # only doing six steps, so max z directions are -5 and 5
 
 all_combos <- crossing(x = 1:len, y = 1:len, z = -6:6)
@@ -269,7 +269,9 @@ res1
 
 ```
 
-With the above code, I get `121`, which is incorrect.
+With the above code, I get `121`, which is incorrect. 
+
+(chunk above set to `eval=FALSE` as it's incorrect and I moved on to a correct approach)
 
 Trying again, this time with an array
 
