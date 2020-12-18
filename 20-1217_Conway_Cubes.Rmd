@@ -14,10 +14,181 @@ options(scipen = 999)
 
 ## Day 17: Conway Cubes
 
+As your flight slowly drifts through the sky, the Elves at the Mythical Information Bureau at the North Pole contact you. They'd like some help debugging a malfunctioning experimental energy source aboard one of their super-secret imaging satellites.
+
+The experimental energy source is based on cutting-edge technology: a set of Conway Cubes contained in a pocket dimension! When you hear it's having problems, you can't help but agree to take a look.
+
+The pocket dimension contains an infinite 3-dimensional grid. At every integer 3-dimensional coordinate `(x,y,z)`, there exists a single cube which is either *active* or *inactive*.
+
+In the initial state of the pocket dimension, almost all cubes start *inactive*. The only exception to this is a small flat region of cubes (your puzzle input); the cubes in this region start in the specified *active (#)* or *inactive (.)* state.
+
+The energy source then proceeds to boot up by executing *six cycles*.
+
+Each cube only ever considers its `neighbors`: any of the 26 other cubes where any of their coordinates differ by at most 1. For example, given the cube at x=1,y=2,z=3, its neighbors include the cube at x=2,y=2,z=2, the cube at x=0,y=2,z=3, and so on.
+
+During a cycle, *all cubes simultaneously change their state* according to the following rules:
+
+- If a cube is `active` and `exactly 2 or 3` of its neighbors are also active, the cube remains `active`. Otherwise, the cube becomes `inactive`.
+- If a cube is `inactive` but `exactly 3` of its neighbors are `active`, the cube becomes `active`. Otherwise, the cube remains `inactive`.
+
+The engineers responsible for this experimental energy source would like you to simulate the pocket dimension and determine what the configuration of cubes should be at the end of the six-cycle boot process.
+
+For example, consider the following initial state:
+
+`.#.`
+`..#`
+`###`
+
+Even though the pocket dimension is 3-dimensional, this initial state represents a small 2-dimensional slice of it. (In particular, this initial state defines a 3x3x1 region of the 3-dimensional space.)
+
+Simulating a few cycles from this initial state produces the following configurations, where the result of each cycle is shown layer-by-layer at each given z coordinate (and the frame of view follows the active cells in each cycle):
+
+Before any cycles:
+
+`z=0`
+`.#.`
+`..#`
+`###`
+
+
+After 1 cycle:
+
+`z=-1`
+`#..`
+`..#`
+`.#.`
+
+`z=0`
+`#.#`
+`.##`
+`.#.`
+
+`z=1`
+`#..`
+`..#`
+`.#.`
+
+
+After 2 cycles:
+
+`z=-2`
+`.....`
+`.....`
+`..#..`
+`.....`
+`.....`
+
+`z=-1`
+`..#..`
+`.#..#`
+`....#`
+`.#...`
+`.....`
+
+`z=0`
+`##...`
+`##...`
+`#....`
+`....#`
+`.###.`
+
+`z=1`
+`..#..`
+`.#..#`
+`....#`
+`.#...`
+`.....`
+
+`z=2`
+`.....`
+`.....`
+`..#..`
+`.....`
+`.....`
+
+
+After 3 cycles:
+
+`z=-2`
+`.......`
+`.......`
+`..##...`
+`..###..`
+`.......`
+`.......`
+`.......`
+
+`z=-1`
+`..#....`
+`...#...`
+`#......`
+`.....##`
+`.#...#.`
+`..#.#..`
+`...#...`
+
+`z=0`
+`...#...`
+`.......`
+`#......`
+`.......`
+`.....##`
+`.##.#..`
+`...#...`
+
+`z=1`
+`..#....`
+`...#...`
+`#......`
+`.....##`
+`.#...#.`
+`..#.#..`
+`...#...`
+
+`z=2`
+`.......`
+`.......`
+`..##...`
+`..###..`
+`.......`
+`.......`
+`.......`
+
+After the full six-cycle boot process completes, `112` cubes are left in the active state.
+
+Starting with your given initial configuration, simulate six cycles. 
+
+*How many cubes are left in the active state after the sixth cycle?*
 
 ## INPUT
 
 ```{r input}
+input_raw <- 
+  read_lines("20-1217_input_conway_cubes.txt")
+
+len <- str_length(input_raw[[1]])
+
+input <- vector("list", len)
+
+for (i in seq_along(input_raw)) {
+  
+  x_val <- input_raw[i] %>% 
+    str_split(., "") %>% 
+    .[[1]]
+  
+  
+  input[[i]] <- 
+    tibble(y = (len + 1) - i, z = 0, value = x_val) %>%
+    mutate(x = row_number()) %>% 
+    relocate(x)  
+}
+
+input <- 
+  reduce(input, bind_rows) %>% 
+  arrange(x, y, z)
+
+
+
 
 ```
 
@@ -25,8 +196,183 @@ options(scipen = 999)
 ## EXERCISE 1
 
 ```{r exercise 1}
+# only doing six steps, so max z directions are -5 and 5
+
+all_combos <- crossing(x = 1:len, y = 1:len, z = -6:6)
+
+initial_state <- 
+  left_join(all_combos, input, by = c("x", "y", "z")) %>% 
+  mutate(value = replace_na(value, "."))
+
+state <- initial_state
+
+active_neighbors <- function(df, x1, y1, z1) { 
+  df %>% 
+    filter(between(x, max(x1 - 1, 1), min(x1 + 1, 8)), 
+           between(y, max(y1 - 1, 1), min(y1 + 1, 8)), 
+           between(z, max(z1 - 1, -6), min(z1 + 1, 6)), 
+           str_c(x, y, z) != str_c(x1, y1, z1)) %>% 
+    pull(value) %>%
+    `==` (., "#") %>%
+    sum()
+}
+
+
+conway_cycle <- function(.df, ...) {
+  
+  result <- .df
+  
+  len_cc <- length(unique(.df$x))
+  
+  for(i in 1:len_cc) { #x
+    for (j in 1:len_cc) { #y
+      for (k in -6:6) { #z
+        spot <- .df$value[.df$x == i &
+                            .df$y == j &
+                            .df$z == k]
+        
+        nbors <- active_neighbors(.df, i, j, k)
+        
+        if (spot == "#" && nbors %in% c(2,3)) {
+          next
+        } else if (spot == "#") {
+          result$value[result$x == i &
+                         result$y == j &
+                         result$z == k] <- "."
+        } else if (spot == "." && nbors == 3) {
+          result$value[result$x == i &
+                         result$y == j &
+                         result$z == k] <- "#"
+        }
+        
+      }
+      
+    }
+    
+  }
+  
+  result
+}
+
+tictoc::tic("accumulate res1")
+
+res1 <- reduce(1:6, conway_cycle, .init = initial_state)
+
+tictoc::toc()
+
+
+
+sum(res1$value == "#")
+
+
+res1
 
 ```
+
+With the above code, I get `121`, which is incorrect.
+
+Trying again, this time with an array
+
+```{r exercise 1 array}
+
+sample_data <- 
+  matrix(str_split(".#...####", "")[[1]], nrow = 3, byrow = TRUE)
+
+# need to pad by our steps...6 in all directions
+
+input_matrix <- 
+  str_split(input_raw , "") %>% reduce(., c) %>% 
+  matrix(nrow = 8, byrow = TRUE)
+
+
+data_array <- input_matrix
+
+# array indices are [row, column, slice]
+
+# 8y x 8x x 13z
+max_y <- nrow(data_array) + (6 * 2)
+max_x <- ncol(data_array) + (6 * 2)
+max_z <- (2 * 6) + 1
+
+# create initial array, first with all inactive
+state_array <- rep(".", prod(max_x, max_y,  max_z))
+dim(state_array) <- c(max_y, max_x, max_z)
+
+# our initial position should be the middle z "slice" -- with 13 slices that's 7
+state_array[7:(7 + (nrow(data_array) - 1)),
+            7:(7 + (ncol(data_array) - 1)),
+            ceiling(max_z / 2)] <- data_array
+
+state_array[, , 7]
+
+find_neighbors_array <- function(arr, y, x, z) {
+  
+  # if the spot is active already, subtract one from final sum so we don't include it
+  subtract_spot <- if_else(arr[y, x, z] == "#", -1, 0)
+  
+  delta <- -1:1
+  
+  # find deltas
+  delta_y <- y + delta
+  delta_x <- x + delta
+  delta_z <- z + delta
+  
+  # ensure deltas are within bounds
+  delta_y <- delta_y[between(delta_y, 1, max_y)]
+  delta_x <- delta_x[between(delta_x, 1, max_x)]
+  delta_z <- delta_z[between(delta_z, 1, max_z)]
+  
+  # find neighbors and subtract 1 is spot counts as active 
+  sum(arr[delta_y, delta_x, delta_z] == "#") + subtract_spot
+  
+}
+
+conway_cycle_array <- function(.arr, ...) {
+  
+  dx <- dim(.arr)
+  
+  result <- .arr
+  
+  for (i in seq_len(dx[1])) { # y, rows
+    for (j in seq_len(dx[2])){ # x, cols
+      for (k in seq_len(dx[3])) { # z, slices
+        
+        spot <- .arr[i, j, k]
+        
+        nbors <- find_neighbors_array(.arr, i, j, k)
+        
+        if (spot == "#") {
+          if (nbors %in% c(2,3)) {
+            next
+          } else {
+            result[i, j, k] <- "."
+          }
+        } else if (spot == ".") {
+          if (nbors == 3) {
+            result[i, j, k] <- "#"
+          } else {
+            next
+          }
+        }
+        
+      } # end z slice loop
+    } # end x col loop
+  } # end y row loop
+  
+  return(result)
+  
+}
+
+res1_array <- 
+  reduce(1:6, conway_cycle_array, .init = state_array)
+
+sum(res1_array == "#")
+
+
+```
+
+Forgot to take into account that the grid expands in the x and y plane as well as in the z plane.  Took that into account and got an answer of `252`
+
 
 ## EXERCISE 2 NARRATIVE
 
