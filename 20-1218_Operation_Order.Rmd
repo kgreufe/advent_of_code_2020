@@ -30,7 +30,7 @@ For example, the steps to evaluate the expression `1 + 2 * 3 + 4 * 5 + 6` are as
 `         13   * 5 + 6`
 `             65   + 6`
 `                 71`
-                 
+
 Parentheses can override this order; for example, here is what happens if parentheses are added to form `1 + (2 * 3) + (4 * (5 + 6))`:
 
 `1 + (2 * 3) + (4 * (5 + 6))`
@@ -71,12 +71,10 @@ input <- tibble(original = input_raw)
 `%+%` <- function(a, b) a + b
 `%*%` <- function(a, b) a * b
 
-input <- mutate(input, modified = str_replace_all(original, c("\\+" = "%\\+%", "\\*" = "%\\*%")))
+input <- mutate(input, modified1 = str_replace_all(original, c("\\+" = "%\\+%", "\\*" = "%\\*%")))
 
-ans1 <- 0
-
-map(input$modified, ~ eval(parse(text = .))) %>% 
-  reduce(., `+`)
+map(input$modified1, ~ eval(parse(text = .))) %>% 
+  reduce(., sum)
 
 
 ```
@@ -87,12 +85,51 @@ Summing up the results when both addition and multiplication have the same order
 
 ## EXERCISE 2 NARRATIVE
 
+You manage to answer the child's questions and they finish part 1 of their homework, but get stuck when they reach the next section: advanced math.
 
+Now, *addition and multiplication have different precedence levels*, but they're not the ones you're familiar with. Instead, *addition is evaluated before multiplication*.
+
+For example, the steps to evaluate the expression *1 + 2 * 3 + 4 * 5 + 6* are now as follows:
+
+`1 + 2 * 3 + 4 * 5 + 6`
+`  3   * 3 + 4 * 5 + 6`
+`  3   *   7   * 5 + 6`
+`  3   *   7   *  11`
+`     21       *  11`
+`         231`
+
+Here are the other examples from above:
+
+`1 + (2 * 3) + (4 * (5 + 6))` still becomes `51`.
+`2 * 3 + (4 * 5)` becomes `46`.
+`5 + (8 * 3 + 9 + 3 * 4 * 3)` becomes `1445`.
+`5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4))` becomes `669060`.
+`((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2` becomes `23340`.
+
+*What do you get if you add up the results of evaluating the homework problems using these new rules?*
 
 ## EXERCISE 2
 
 ```{r exercise 2}
 
+# first, we'll overwrite each function to be it's opposite.
+
+`*` <- function(e1, e2) sum(e1, e2)
+`+` <- function(e1, e2) prod(e1, e2)
+
+# Then we'll swap + to be * and * to be +, need to do this in three steps b/c these are not executed (or do not appear to be) simultaneously, but instead sequentially. 
+
+input <- mutate(input, 
+                modified2 = 
+                  str_replace_all(original, c("\\+" = "@", 
+                                              "\\*" = "\\+", 
+                                              "@" = "\\*")))
+
+# now, we we execute each of these commands, R will execute the * before the +, as it always does, except that now those operations are switched. 
+
+map(input$modified2, ~ parse(text = .) %>% eval()) %>% 
+  reduce(., sum)
 
 ```
 
+When we process addition before multiplication we get as a sum of all results `275011754427339`
