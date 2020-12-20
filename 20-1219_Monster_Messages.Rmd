@@ -15,22 +15,156 @@ options(scipen = 999)
 ## Day 19: Monster Messages
 
 
+You land in an airport surrounded by dense forest. As you walk to your high-speed train, the Elves at the Mythical Information Bureau contact you again. They think their satellite has collected an image of a *sea monster*! Unfortunately, the connection to the satellite is having problems, and many of the messages sent back from the satellite have been corrupted.
+
+They sent you a list of *the rules valid messages should obey* and a list of *received messages they've collected so far* (your puzzle input).
+
+The *rules for valid messages* (the top part of your puzzle input) are numbered and build upon each other. For example:
+
+`0: 1 2`
+`1: "a"`
+`2: 1 3 | 3 1`
+`3: "b"`
+
+Some rules, like `3: "b"`, simply match a single character (in this case, b).
+
+The remaining rules list the sub-rules that must be followed; for example, the rule `0: 1 2` means that to match rule 0, the text being checked must match rule 1, and the text after the part that matched rule 1 must then match rule 2.
+
+Some of the rules have multiple lists of sub-rules separated by a pipe (`|`). This means that *at least one* list of sub-rules must match. (The ones that match might be different each time the rule is encountered.) For example, the rule `2: 1 3 | 3 1` means that to match rule 2, the text being checked must match rule 1 followed by rule 3 or it must match rule 3 followed by rule 1.
+
+Fortunately, there are no loops in the rules, so the list of possible matches will be finite. Since rule 1 matches a and rule 3 matches b, rule 2 matches either `ab` or `ba`. Therefore, rule 0 matches `aab` or `aba`.
+
+Here's a more interesting example:
+
+`0: 4 1 5`
+`1: 2 3 | 3 2`
+`2: 4 4 | 5 5`
+`3: 4 5 | 5 4`
+`4: "a"`
+`5: "b"`
+
+Here, because rule 4 matches a and rule 5 matches b, rule 2 matches two letters that are the same (`aa` or `bb`), and rule 3 matches two letters that are different (`ab` or `ba`).
+
+Since rule 1 matches rules 2 and 3 once each in either order, it must match two pairs of letters, one pair with matching letters and one pair with different letters. This leaves eight possibilities: `aaab`, `aaba`, `bbab`, `bbba`, `abaa`, `abbb`, `baaa`, or `babb`.
+
+Rule 0, therefore, matches a (rule 4), then any of the eight options from rule 1, then b (rule 5): `aaaabb`, `aaabab`, `abbabb`, `abbbab`, `aabaab`, `aabbbb`, `abaaab`, or `ababbb`.
+
+The *received messages* (the bottom part of your puzzle input) need to be checked against the rules so you can determine which are valid and which are corrupted. Including the rules and the messages together, this might look like:
+
+`0: 4 1 5`
+`1: 2 3 | 3 2`
+`2: 4 4 | 5 5`
+`3: 4 5 | 5 4`
+`4: "a"`
+`5: "b"`
+` `
+`ababbb`
+`bababa`
+`abbbab`
+`aaabbb`
+`aaaabbb`
+
+Your goal is to determine the number of messages that completely match rule 0. In the above example, `ababbb` and `abbbab` match, but `bababa`, `aaabbb`, and `aaaabbb` do not, producing the answer `2`. The whole message must match all of rule 0; there can't be extra unmatched characters in the message. (For example, `aaaabbb` might appear to match rule 0 above, but it has an extra unmatched b on the end.)
+
+*How many messages completely match rule 0?*
 
 ## INPUT
 
 ```{r input}
+input_raw <- read_file("20-1219_input_monster_messages.txt")
 
+input_split <- str_split(input_raw, "\\n\\n")[[1]]  
+
+rules_raw <- input_split[[1]] %>% str_split(., "\\n") %>% pluck(1) %>% .[. != ""]
+messages_raw <- input_split[[2]] %>% str_split(., "\\n") %>% pluck(1) %>% .[. != ""]
 
 ```
 
 
 ## EXERCISE 1
 
-```{r exercise 1}
+```{r exercise 1, eval=TRUE}
+rules_to_table <- function(.rules) {
+  tibble(input = .rules) %>% 
+    extract(., col = input, into = c("num", "rule"), regex = "(.*): (.*)") %>% 
+    # separate(., col = "rule", into = c("rule1", "rule2"), sep = " \\| ", fill = "right") %>% 
+    mutate(rule = str_remove_all(rule, "\\\""), 
+           num = parse_number(num)) %>% 
+    arrange(num)
+}
 
+sample_raw <- 
+  "0: 4 1 5\n1: 2 3 | 3 2\n2: 4 4 | 5 5\n3: 4 5 | 5 4\n4: \"a\"\n5: \"b\"" %>% 
+  str_split(., "\\n") %>% pluck(1)
+
+rules <- rules_to_table(rules_raw)
+sample_rules <- rules_to_table(sample_raw)
+
+sample_responses <- str_split("ababbb,bababa,abbbab,aaabbb,aaaabbb", ",")[[1]]
+
+rules
+
+process_rules <- function(.df, .num, ...) {
+  
+  if (.num == "|") return("|")
+  
+  rule <- filter(.df, num == .num) %>% pull(rule)
+  
+  if (str_detect(rule, "^(a|b)$")) return(rule)
+  
+  rule_split <- str_split(rule, " ")[[1]]
+  
+  map(rule_split, ~ str_c("(", foo(.df = .df, .num = .), ")", collapse = ""))
+  
+}
+
+
+ans1 <- process_rules(rules, 0) 
+
+
+replacements <- function(.string, run = FALSE) {
+  
+  result <- .string
+  
+  if (str_detect(.string, "\\(a\\)|\\(b\\)|\\(\\|\\)")) run <- TRUE
+  
+  
+  while (run) {
+    
+    result <- str_replace_all(result, c("\\(a\\)" = "a",
+                                        "\\(b\\)" = "b", 
+                                        "\\(\\|\\)" = "|"))
+    
+    if (str_detect(result, "\\(a\\)|\\(b\\)|\\(\\|\\)") == FALSE) run <- FALSE
+    
+  }
+  
+  return(result)
+  
+}
+
+regex_search <- 
+  # perform replacement reduction function
+  map(ans1, replacements) %>% 
+  # wrap each section of list into parenthesis as they each need to get processed as a group
+  map(~ str_c("(", ., ")")) %>% 
+  # condense everything down to a single character string
+  reduce(str_c) %>% 
+  # put the beginning and end anchors so we only get exact matches
+  str_c("^", ., "$")
+
+
+messages_raw[str_detect(messages_raw, regex_search)] %>% length()
+
+
+# 41 48
+# rules %>% filter(num %in% c(41, 48)) %>% pull(rule1) %>% str_detect(., "a|b")
 
 ```
 
+Really struggled with this. Above seems to get the right answer... `160` messages match.
+
+Building the recursion for the regular expression was hard. Took ~ 4 hours. 
 
 
 
