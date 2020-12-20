@@ -7,6 +7,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(tictoc)
 
 #disable scientific notation
 options(scipen = 999)
@@ -84,6 +85,7 @@ messages_raw <- input_split[[2]] %>% str_split(., "\\n") %>% pluck(1) %>% .[. !=
 ## EXERCISE 1
 
 ```{r exercise 1, eval=TRUE}
+
 rules_to_table <- function(.rules) {
   tibble(input = .rules) %>% 
     extract(., col = input, into = c("num", "rule"), regex = "(.*): (.*)") %>% 
@@ -102,11 +104,14 @@ sample_rules <- rules_to_table(sample_raw)
 
 sample_responses <- str_split("ababbb,bababa,abbbab,aaabbb,aaaabbb", ",")[[1]]
 
-rules
+# rules
 
-process_rules <- function(.df, .num, ...) {
+process_rules <- function(.df, .num, .depth = 0, ...) {
+  
+  # print(.depth)
   
   if (.num == "|") return("|")
+  if (.depth >= 15) return("")
   
   rule <- filter(.df, num == .num) %>% pull(rule)
   
@@ -114,28 +119,26 @@ process_rules <- function(.df, .num, ...) {
   
   rule_split <- str_split(rule, " ")[[1]]
   
-  map(rule_split, ~ str_c("(", foo(.df = .df, .num = .), ")", collapse = ""))
+  map(rule_split, ~ str_c("(", process_rules(.df = .df, .num = ., .depth = .depth + 1), ")", collapse = ""))
   
 }
-
-
-ans1 <- process_rules(rules, 0) 
 
 
 replacements <- function(.string, run = FALSE) {
   
   result <- .string
   
-  if (str_detect(.string, "\\(a\\)|\\(b\\)|\\(\\|\\)")) run <- TRUE
+  if (str_detect(.string, "\\(a\\)|\\(b\\)|\\(\\|\\)|\\(\\)")) run <- TRUE
   
   
   while (run) {
     
     result <- str_replace_all(result, c("\\(a\\)" = "a",
                                         "\\(b\\)" = "b", 
-                                        "\\(\\|\\)" = "|"))
+                                        "\\(\\|\\)" = "|", 
+                                        "\\(\\)" = ""))
     
-    if (str_detect(result, "\\(a\\)|\\(b\\)|\\(\\|\\)") == FALSE) run <- FALSE
+    if (str_detect(result, "\\(a\\)|\\(b\\)|\\(\\|\\)|\\(\\)") == FALSE) run <- FALSE
     
   }
   
@@ -143,7 +146,12 @@ replacements <- function(.string, run = FALSE) {
   
 }
 
-regex_search <- 
+
+tictoc::tic("process rules 1")
+ans1 <- process_rules(rules, 0) 
+tictoc::toc()
+
+regex_search1 <- 
   # perform replacement reduction function
   map(ans1, replacements) %>% 
   # wrap each section of list into parenthesis as they each need to get processed as a group
@@ -153,8 +161,9 @@ regex_search <-
   # put the beginning and end anchors so we only get exact matches
   str_c("^", ., "$")
 
-
-messages_raw[str_detect(messages_raw, regex_search)] %>% length()
+tictoc::tic("match messsages 1")
+messages_raw[str_detect(messages_raw, regex_search1)] %>% length()
+tictoc::toc()
 
 
 # 41 48
@@ -170,11 +179,48 @@ Building the recursion for the regular expression was hard. Took ~ 4 hours.
 
 ## EXERCISE 2 NARRATIVE
 
+As you look over the list of messages, you realize your matching rules aren't quite right. To fix them, completely replace rules `8: 42` and `11: 42 31` with the following:
 
+`8: 42 | 42 8`
+`11: 42 31 | 42 11 31`
+
+This small change has a big impact: now, the rules do contain loops, and the list of messages they could hypothetically match is infinite. You'll need to determine how these changes affect which messages are valid.
+
+Fortunately, many of the rules are unaffected by this change; it might help to start by looking at which rules always match the same set of values and how those rules (especially rules 42 and 31) are used by the new versions of rules 8 and 11.
+
+(Remember, you only need to handle the rules you have; building a solution that could handle any hypothetical combination of rules would be significantly more difficult.)
+
+*After updating rules 8 and 11, how many messages completely match rule 0?*
 
 ## EXERCISE 2
 
 ```{r exercise 2}
 
+# update our rules with new info
+rules$rule[rules$num == 8] <- "42 | 42 8"
+rules$rule[rules$num == 11] <- "42 31 | 42 11 31"
+
+
+# same function as exercise 1
+tictoc::tic("process rules 2")
+ans2 <- process_rules(rules, 0)
+tictoc::toc()
+
+# same reduction as exercise 1
+regex_search2 <- 
+  map(ans2, replacements) %>% 
+  map(~ str_c("(", ., ")")) %>% 
+  reduce(str_c) %>% 
+  str_c("^", ., "$")
+
+
+tictoc::tic("match messsages 2")
+messages_raw[str_detect(messages_raw, regex_search2)] %>% length()
+tictoc::toc()
+
 
 ```
+
+Adjusted the `process_rules()` function so that if the max recursion depth gets to at least 15 it'll return a blank string.  Also adjusted the `replacements()` function to account for those blank strings being `()`.  
+
+It takes a bit longer to run (~ 3 minutes), but with the new rules, `357` messages match!
