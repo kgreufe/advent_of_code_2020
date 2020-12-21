@@ -361,7 +361,7 @@ prod(as.numeric(corners))
 
 ```
 
-
+I get `29125888761511`
 
 
 ## EXERCISE 2 NARRATIVE
@@ -388,74 +388,52 @@ Determine how rough the waters are in the sea monsters' habitat by counting the 
 ```{r exercise 2}
 # borders are not part of the final solution, so remove them from each matrix, then bind them all together
 
-ex2_map <- solution[[2]]
+final_map <- solution[[2]]
 
-ex2_map <- map(ex2_map, ~ .[2:(len-1), 2:(len - 1)])
+final_map <- map(final_map, ~ .[2:9, 2:9])
 
+final_map <- map(1:d, ~ reduce(final_map[1:d + (d * (.x - 1))], rbind))
+final_map <- reduce(final_map, cbind)
 
-# image <- solution[[2]]
-# image <- lapply(image, function(x) x[2:9, 2:9])
-# image <- lapply(1:d, function(i) do.call(rbind, image[1:d + (d * (i - 1))]))
-# image <- do.call(cbind, image)
-
-final_map <- vector("list")
-
-dimlength <- sqrt(length(ex2_map))
-
-for (i in seq_len(dimlength)) {
-  
-  start <- (i * 12) - 11
-  end <- (i * 12)
-  
-  final_map[[i]] <- reduce(ex2_map[start:end], cbind)
-  
-}
-
-final_map <- reduce(res, rbind)
 
 # all orientations
 final_map_all <- gen_tiles(final_map)
+
 
 monster <- 
   "                  # ,#    ##    ##    ###, #  #  #  #  #  #   " %>% 
   str_split(., ",") %>% pluck(1) %>% 
   str_c(collapse = "") %>% 
   str_split("") %>% pluck(1) %>% 
+  str_replace(" ", ".") %>% 
   matrix(nrow = 3, byrow = TRUE)
 
 
 
-# monster_index <- which(monster == "#")
-  
-monster_replace <- str_replace_all(monster, "#", "O") %>% matrix(nrow = 3)
+monster_index <- which(monster == "#")
 
-monster_col <- ncol(monster) - 1
+monster_count <- sum(str_count(monster, "#"))
+
 monster_row <- nrow(monster) - 1
+monster_col <- ncol(monster) - 1
 
 
 find_monster <- function(mt, i, j) {
   
   sub <- mt[i:min((i + monster_row), nrow(mt)), 
-            j:min((j + monster_col), ncol(mt)), 
-            drop = FALSE]
+     j:min((j + monster_col), ncol(mt)), 
+     drop = FALSE]
   
-  # sub_index <- which(sub == "#")
-  
-  # print(sub)
-  
-  if (identical(sub, monster)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
+  which(sub == "#")
   
 }
 
 
-find_monster(final_map_all[[1]], 4, 1)
 
-foo <- vector("list", 8)
-foo <- map(foo, ~ `<-` (., 0))
+
+solution2 <- vector("list", 8)
+solution2 <- map(foo, ~ `<-` (., 0))
+
 
 # find which orientation
 for (m in seq_along(final_map_all)) {
@@ -465,14 +443,22 @@ for (m in seq_along(final_map_all)) {
   for (i in 1:nrow(grid)) {
     for (j in 1:ncol(grid)){
       
-      found <- find_monster(grid, i, j)
-      if (found) foo[[m]] <- foo[[m]] + 1
+      search <- find_monster(grid, i, j)
+      found <- all(monster_index %in% search) && length(search) >= length(monster_index) 
+      
+      if (found) solution2[[m]] <- solution2[[m]] + 1
       
     }
   }
 }
 
-foo
+monster_map <- which(solution2 > 0)
+
+sum(final_map_all[[monster_map]] == "#") - # all #'s for good map
+  solution2[[monster_map]] * monster_count # all monsters found multipled by #'s in a monster (15)
+
 ```
 
-Can't figure it out. None match with this code. Giving up for now. It's either that my monster match is incorrect, or that I tied up the image incorrectly. 
+This also took a long time to figure out -- first pasting together all the grids, then doing the search.  Getting down what a match actully looks like was tricky since only the pattern of `#` matters, regardless of there are other `#` in the subset we're looking at.  
+
+I get `2219`
