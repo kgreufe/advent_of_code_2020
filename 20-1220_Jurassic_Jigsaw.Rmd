@@ -256,7 +256,7 @@ if (sample) {
 
 ## EXERCISE 1
 
-Knew I wanted to run a recursive check with backgracking, but didn't know how to implement.  After a few hours of struggling came across this code to help:
+Knew I wanted to run a recursive check of elements, but didn't know how to implement.  After a few hours of struggling came across this code to help:
 https://github.com/danhalligan/AoC2020/blob/main/q20/q20.R
 
 ```{r exercise 1}
