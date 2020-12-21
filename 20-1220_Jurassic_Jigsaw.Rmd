@@ -7,6 +7,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(magrittr)
 
 #disable scientific notation
 options(scipen = 999)
@@ -14,18 +15,348 @@ options(scipen = 999)
 
 ## Day 20: Jurassic Jigsaw
 
+The high-speed train leaves the forest and quickly carries you south. You can even see a desert in the distance! Since you have some spare time, you might as well see if there was anything interesting in the image the Mythical Information Bureau satellite captured.
 
+After decoding the satellite messages, you discover that the data actually contains many small images created by the satellite's *camera array*. The camera array consists of many cameras; rather than produce a single square image, they produce many smaller square *image tiles* that need to be *reassembled back into a single image*.
+
+Each camera in the camera array returns a single *monochrome image tile* with a random unique *ID number*. The tiles (your puzzle input) arrived in a random order.
+
+Worse yet, the camera array appears to be malfunctioning: each image tile has been *rotated and flipped to a random orientation*. Your first task is to reassemble the original image by orienting the tiles so they fit together.
+
+To show how the tiles should be reassembled, each tile's image data includes a border that should line up exactly with its adjacent tiles. All tiles have this border, and the border lines up exactly when the tiles are both oriented correctly. Tiles at the edge of the image also have this border, but the outermost edges won't line up with any other tiles.
+
+For example, suppose you have the following nine tiles:
+
+`Tile 2311:`
+`..##.#..#.`
+`##..#.....`
+`#...##..#.`
+`####.#...#`
+`##.##.###.`
+`##...#.###`
+`.#.#.#..##`
+`..#....#..`
+`###...#.#.`
+`..###..###`
+
+`Tile 1951:`
+`#.##...##.`
+`#.####...#`
+`.....#..##`
+`#...######`
+`.##.#....#`
+`.###.#####`
+`###.##.##.`
+`.###....#.`
+`..#.#..#.#`
+`#...##.#..`
+
+`Tile 1171:`
+`####...##.`
+`#..##.#..#`
+`##.#..#.#.`
+`.###.####.`
+`..###.####`
+`.##....##.`
+`.#...####.`
+`#.##.####.`
+`####..#...`
+`.....##...`
+
+`Tile 1427:`
+`###.##.#..`
+`.#..#.##..`
+`.#.##.#..#`
+`#.#.#.##.#`
+`....#...##`
+`...##..##.`
+`...#.#####`
+`.#.####.#.`
+`..#..###.#`
+`..##.#..#.`
+
+`Tile 1489:`
+`##.#.#....`
+`..##...#..`
+`.##..##...`
+`..#...#...`
+`#####...#.`
+`#..#.#.#.#`
+`...#.#.#..`
+`##.#...##.`
+`..##.##.##`
+`###.##.#..`
+
+`Tile 2473:`
+`#....####.`
+`#..#.##...`
+`#.##..#...`
+`######.#.#`
+`.#...#.#.#`
+`.#########`
+`.###.#..#.`
+`########.#`
+`##...##.#.`
+`..###.#.#.`
+
+`Tile 2971:`
+`..#.#....#`
+`#...###...`
+`#.#.###...`
+`##.##..#..`
+`.#####..##`
+`.#..####.#`
+`#..#.#..#.`
+`..####.###`
+`..#.#.###.`
+`...#.#.#.#`
+
+`Tile 2729:`
+`...#.#.#.#`
+`####.#....`
+`..#.#.....`
+`....#..#.#`
+`.##..##.#.`
+`.#.####...`
+`####.#.#..`
+`##.####...`
+`##..#.##..`
+`#.##...##.`
+
+`Tile 3079:`
+`#.#.#####.`
+`.#..######`
+`..#.......`
+`######....`
+`####.#..#.`
+`.#...#.##.`
+`#.#####.##`
+`..#.###...`
+`..#.......`
+`..#.###...`
+
+By rotating, flipping, and rearranging them, you can find a square arrangement that causes all adjacent borders to line up:
+
+`#...##.#.. ..###..### #.#.#####.`
+`..#.#..#.# ###...#.#. .#..######`
+`.###....#. ..#....#.. ..#.......`
+`###.##.##. .#.#.#..## ######....`
+`.###.##### ##...#.### ####.#..#.`
+`.##.#....# ##.##.###. .#...#.##.`
+`#...###### ####.#...# #.#####.##`
+`.....#..## #...##..#. ..#.###...`
+`#.####...# ##..#..... ..#.......`
+`#.##...##. ..##.#..#. ..#.###...`
+
+`#.##...##. ..##.#..#. ..#.###...`
+`##..#.##.. ..#..###.# ##.##....#`
+`##.####... .#.####.#. ..#.###..#`
+`####.#.#.. ...#.##### ###.#..###`
+`.#.####... ...##..##. .######.##`
+`.##..##.#. ....#...## #.#.#.#...`
+`....#..#.# #.#.#.##.# #.###.###.`
+`..#.#..... .#.##.#..# #.###.##..`
+`####.#.... .#..#.##.. .######...`
+`...#.#.#.# ###.##.#.. .##...####`
+
+`...#.#.#.# ###.##.#.. .##...####`
+`..#.#.###. ..##.##.## #..#.##..#`
+`..####.### ##.#...##. .#.#..#.##`
+`#..#.#..#. ...#.#.#.. .####.###.`
+`.#..####.# #..#.#.#.# ####.###..`
+`.#####..## #####...#. .##....##.`
+`##.##..#.. ..#...#... .####...#.`
+`#.#.###... .##..##... .####.##.#`
+`#...###... ..##...#.. ...#..####`
+`..#.#....# ##.#.#.... ...##.....`
+
+For reference, the IDs of the above tiles are:
+
+`1951    2311    3079`
+`2729    1427    2473`
+`2971    1489    1171`
+
+To check that you've assembled the image correctly, multiply the IDs of the four corner tiles together. If you do this with the assembled tiles from the example above, you get `1951 * 3079 * 2971 * 1171 = 20899048083289`.
+
+Assemble the tiles into an image. What do you get if you multiply together the IDs of the four corner tiles?
 
 ## INPUT
 
-```{r input}
+```{r sample}
+sample_raw <- read_file("20-1220_sample_jurassic_jigsaw.txt")
+
+sample <- 
+  str_split(sample_raw, "\\r\\n\\r\\n")[[1]] %>% 
+  .[.!= ""]
+
+sample_tile_numbers <- 
+  str_extract(sample, "Tile \\d{1,4}") %>% 
+  parse_number()
+
+sample_len <-
+  str_split(sample[1], "\\r\\n")[[1]] %>% 
+  tail(-1) %>% #remove tile number
+  str_length() %>% 
+  unique()
+
+sample_tile_data <- 
+  sample %>% 
+  str_remove("Tile \\d{1,4}:\\r\\n") %>% 
+  str_split("\\r\\n") %>% 
+  map(., ~ str_c(., collapse = "") %>% str_split(., "") %>% .[[1]]) %>% 
+  map(., matrix, ncol = sample_len, byrow = TRUE)
+
+names(sample_tile_data) <- sample_tile_numbers
 
 ```
 
 
+
+```{r input}
+input_raw <- read_file("20-1220_input_jurassic_jigsaw.txt")
+
+input <- 
+  str_split(input_raw, "\\n\\n")[[1]] %>% 
+  .[. != ""]
+
+tile_numbers <- 
+  str_extract(input, "Tile \\d{1,4}") %>% 
+  parse_number()
+
+len <-
+  str_split(input[1], "\\n")[[1]] %>% 
+  tail(-1) %>% #remove tile number
+  str_length() %>% 
+  unique()
+
+tile_data <- 
+  input %>% 
+  str_remove("Tile \\d{1,4}:\\n") %>% 
+  str_split("\\n") %>% 
+  map(., ~ str_c(., collapse = "") %>% str_split(., "") %>% .[[1]]) %>% 
+  map(., matrix, ncol = sample_len, byrow = TRUE)
+
+names(tile_data) <- tile_numbers
+
+
+```
+
+```{r set sample or live data}
+# flip this to TRUE to use sample data
+sample <- FALSE
+
+if (sample) {
+  tile_data <- sample_tile_data
+  len <- sample_len 
+}
+
+```
+
+
+
 ## EXERCISE 1
 
+Knew I wanted to run a recursive check with backgracking, but didn't know how to implement.  After a few hours of struggling came across this code to help:
+https://github.com/danhalligan/AoC2020/blob/main/q20/q20.R
+
 ```{r exercise 1}
+
+
+# functions to get all 8 combinations or tile orientation (my code)
+flip <- function(mt) mt[nrow(mt):1, ]
+rotate <- function(mt) t(flip(mt))
+
+
+gen_tiles <- function(tile) {
+  list(tile,
+       rotate(tile), 
+       rotate(rotate(tile)), 
+       rotate(rotate(rotate(tile))), 
+       flip(tile), 
+       rotate(flip(tile)), 
+       rotate(rotate(flip(tile))), 
+       rotate(rotate(rotate(flip(tile))))
+  )
+}
+
+
+# we'll save our rotated images in a list
+# this will look up the index for an image in that list given i (row) and j (col)
+ind <- function(i, j) (i-1) * d + j
+
+
+
+# function to check validity in orientation
+valid <- function(grid, rotation, i, j, x) {
+  if (i > 1) {
+    prev <- rotation[[ind(i-1, j)]]
+    if (!all(prev[, len] == x[, 1])) return(FALSE)
+  }
+  if (j > 1) {
+    prev <- rotation[[ind(i, j-1)]]
+    if (!all(prev[len, ] == x[1, ])) return(FALSE)
+  }
+  return(TRUE)
+}
+
+# start in top left of grid, assign tile if given orientation and try to solve by adding more tiles, backtrack if we fail
+
+rsolve <- function(grid, rotation){
+  for (i in 1:nrow(grid)) { # rows
+    for (j in 1:nrow(grid)) { # cols
+      if (is.na(grid[i, j])) { # only look at unassigned tiles
+        
+        for (name in setdiff(names(tile_data), grid)) { # look at tiles we haven't assigned yet
+          
+          options <- gen_tiles(tile_data[[name]]) # get all combinations for tile
+          
+          for (r in seq_along(options)) {
+            
+            if (valid(grid, rotation, i, j, options[[r]])) {
+              
+              grid[i, j] <- name
+              rotation[[ind(i, j)]] <- options[[r]]
+              print(grid)
+              o <- rsolve(grid = grid, rotation = rotation)
+              if (!is.null(o)) return(o)
+              grid[i, j] <- NA
+              rotation[[ind(i, j)]] <- NULL
+              
+            } # end valid check
+            
+          } # end of orientation tile check
+          
+        } # end loop of tiles yet placed (name)
+        return(NULL) 
+      } # end grid location NA check
+    } # end col loop
+  } # end row loop
+  
+  return(list(grid, rotation))
+} # end function call
+
+
+# what dimension will our grid be?
+d <- sqrt(length(tile_data))
+
+# solution grid where we'll track which tiles go where
+grid <- matrix(nrow = d, ncol = d)
+
+# list of rotated images in order by row then column
+rotation <- vector("list", d ^ 2)
+
+solution <- rsolve(grid, rotation)
+
+(final_grid <- solution[[1]])
+
+corners <- c(final_grid[1,1], 
+             final_grid[1, d],
+             final_grid[d, 1],
+             final_grid[d, d]
+)
+
+prod(as.numeric(corners))
+
 
 
 ```
@@ -35,14 +366,113 @@ options(scipen = 999)
 
 ## EXERCISE 2 NARRATIVE
 
+Now, you're ready to check the image for sea monsters.
+
+The borders of each tile are not part of the actual image; start by removing them.
+
+Now, you're ready to search for sea monsters! Because your image is monochrome, a sea monster will look like this:
+
+`                  # `
+`#    ##    ##    ###`
+` #  #  #  #  #  #   `
+
+When looking for this pattern in the image, the *spaces can be anything*; `only the #` need to match. Also, you might need to rotate or flip your image before it's oriented correctly to find sea monsters. 
+
+Determine how rough the waters are in the sea monsters' habitat by counting the number of # that are not part of a sea monster. 
+
+*How many # are not part of a sea monster?*
 
 
 ## EXERCISE 2
 
 ```{r exercise 2}
+# borders are not part of the final solution, so remove them from each matrix, then bind them all together
+
+ex2_map <- solution[[2]]
+
+ex2_map <- map(ex2_map, ~ .[2:(len-1), 2:(len - 1)])
+
+
+# image <- solution[[2]]
+# image <- lapply(image, function(x) x[2:9, 2:9])
+# image <- lapply(1:d, function(i) do.call(rbind, image[1:d + (d * (i - 1))]))
+# image <- do.call(cbind, image)
+
+final_map <- vector("list")
+
+dimlength <- sqrt(length(ex2_map))
+
+for (i in seq_len(dimlength)) {
+  
+  start <- (i * 12) - 11
+  end <- (i * 12)
+  
+  final_map[[i]] <- reduce(ex2_map[start:end], cbind)
+  
+}
+
+final_map <- reduce(res, rbind)
+
+# all orientations
+final_map_all <- gen_tiles(final_map)
+
+monster <- 
+  "                  # ,#    ##    ##    ###, #  #  #  #  #  #   " %>% 
+  str_split(., ",") %>% pluck(1) %>% 
+  str_c(collapse = "") %>% 
+  str_split("") %>% pluck(1) %>% 
+  matrix(nrow = 3, byrow = TRUE)
 
 
 
+# monster_index <- which(monster == "#")
+  
+monster_replace <- str_replace_all(monster, "#", "O") %>% matrix(nrow = 3)
 
+monster_col <- ncol(monster) - 1
+monster_row <- nrow(monster) - 1
+
+
+find_monster <- function(mt, i, j) {
+  
+  sub <- mt[i:min((i + monster_row), nrow(mt)), 
+            j:min((j + monster_col), ncol(mt)), 
+            drop = FALSE]
+  
+  # sub_index <- which(sub == "#")
+  
+  # print(sub)
+  
+  if (identical(sub, monster)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+  
+}
+
+
+find_monster(final_map_all[[1]], 4, 1)
+
+foo <- vector("list", 8)
+foo <- map(foo, ~ `<-` (., 0))
+
+# find which orientation
+for (m in seq_along(final_map_all)) {
+  
+  grid <- final_map_all[[m]]
+  
+  for (i in 1:nrow(grid)) {
+    for (j in 1:ncol(grid)){
+      
+      found <- find_monster(grid, i, j)
+      if (found) foo[[m]] <- foo[[m]] + 1
+      
+    }
+  }
+}
+
+foo
 ```
 
+Can't figure it out. None match with this code. Giving up for now. It's either that my monster match is incorrect, or that I tied up the image incorrectly. 
