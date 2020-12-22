@@ -116,23 +116,48 @@ non_allergens <-
   occurrence %>% 
   anti_join(allergen_match, by = c("ingredient")) %>% 
   pull(ingredient)
-  
+
 tibble(x = reduce(input$ingredients_split, c)) %>% 
   filter(x %in% non_allergens) %>% 
   nrow()
-  
+
 ```
 
 Sample data returns `5`
 
 Full data return `1977` non-allergen ingredient appearances in recipes. 
 
+
+
 ## EXERCISE 2 NARRATIVE
 
+Now that you've isolated the inert ingredients, you should have enough information to figure out which ingredient contains which allergen.
+
+In the above example:
+
+`mxmxvkd contains dairy.`
+`sqjhc contains fish.`
+`fvjkl contains soy.`
+
+Arrange the *ingredients alphabetically by their allergen* and separate them by commas to produce your canonical dangerous ingredient list. (There should not be any spaces in your canonical dangerous ingredient list.) In the above example, this would be `mxmxvkd,sqjhc,fvjkl`.
+
+Time to stock your raft with supplies. What is your canonical dangerous ingredient list?
 
 ## EXERCISE 2
 
+Good thing I kept track of them in exercise 1! This should be a simple string concatenation.
+
 ```{r exercise 2}
+
+allergens_sorted <- 
+  allergen_match %>% 
+  arrange(allergen) %>% 
+  pull(ingredient)
+
+str_c(allergens_sorted, collapse = ",")
 
 ```
 
+Allergen ingredients sorted alphabetically by allergen name and combined into a comma delmited list for this puzzle is ...
+
+`dpkvsdk,xmmpt,cxjqxbt,drbq,zmzq,mnrjrf,kjgl,rkcpxs`
