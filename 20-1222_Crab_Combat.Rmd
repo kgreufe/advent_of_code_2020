@@ -772,7 +772,8 @@ rec_combat <- function(decks, auto_win = FALSE) {
     
   }
   
-  winning_player <- which(unlist(map(decks, ~ length(.) > 0)) > 0)
+  winning_player <- which(unlist(map(decks, ~ length(.) > 0)) == TRUE)
+  
   
   return(list(winning_player, decks[[winning_player]]))
 }
@@ -782,7 +783,6 @@ rec_combat <- function(decks, auto_win = FALSE) {
 solution2 <- rec_combat(input) 
 
 sum(solution2[[2]] * (rev(seq_along(solution2[[2]]))))
-
 
 # debugonce(rec_combat)
 ```
