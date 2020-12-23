@@ -187,7 +187,7 @@ deal_round <- function(.ls) {
   # remove that card from their hands
   .ls <- map(.ls, tail, -1)
   
-  # combination of two cards in decending order that will get added to winner's hand
+  # combination of two cards in descending order that will get added to winner's hand
   comb <- sort(c(a, b), decreasing = TRUE)
   
   # figure out winner
@@ -206,11 +206,7 @@ solution1 <- input
 
 play_round <- TRUE
 
-n_plays <- 0
-
 while (play_round) {
-  
-  n_plays <- n_plays + 1
   
   solution1 <- deal_round(solution1)
   
@@ -226,9 +222,9 @@ while (play_round) {
 which_deck <- which(unlist(map(solution1, length)) > 0)
 
 solution1 <- pluck(solution1, which_deck)
- 
+
 (solution1 * rev(seq_along(solution1))) %>% sum()
-  
+
 ```
 
 Test answer should be `306`
@@ -238,13 +234,556 @@ My input answer is `31314`
 
 ## EXERCISE 2 NARRATIVE
 
+You lost to the small crab! Fortunately, crabs aren't very good at recursion. To defend your honor as a Raft Captain, you challenge the small crab to a game of *Recursive Combat*.
 
+Recursive Combat still starts by splitting the cards into two decks (you offer to play with the same starting decks as before - it's only fair). Then, the game consists of a series of *rounds* with a few changes:
+
+Before either player deals a card, if there was a previous round in this game that had exactly the same cards in the same order in the same players' decks, the game instantly ends in a win for player 1. Previous rounds from other games are not considered. (This prevents infinite games of Recursive Combat, which everyone agrees is a bad idea.)
+
+Otherwise, this round's cards must be in a new configuration; the players begin the round by each drawing the top card of their deck as normal.
+
+If both players have at least as many cards remaining in their deck as the value of the card they just drew, the winner of the round is determined by playing a new game of Recursive Combat (see below).
+
+Otherwise, at least one player must not have enough cards left in their deck to recurse; the winner of the round is the player with the higher-value card.
+
+As in regular Combat, the winner of the round (even if they won the round by winning a sub-game) takes the two cards dealt at the beginning of the round and places them on the bottom of their own deck (again so that the winner's card is above the other card). Note that the winner's card might be *the lower-valued of the two cards* if they won the round due to winning a sub-game. If collecting cards by winning the round causes a player to have all of the cards, they win, and the game ends.
+
+Here is an example of a small game that would loop forever without the infinite game prevention rule:
+
+`Player 1:`
+`43`
+`19`
+
+`Player 2:`
+`2`
+`29`
+`14`
+
+During a round of Recursive Combat, if both players have at least as many cards in their own decks as the number on the card they just dealt, the winner of the round is determined by recursing into a sub-game of Recursive Combat. (For example, if player 1 draws the 3 card, and player 2 draws the 7 card, this would occur if player 1 has at least 3 cards left and player 2 has at least 7 cards left, not counting the 3 and 7 cards that were drawn.)
+
+To play a sub-game of Recursive Combat, each player creates a new deck by making a copy of the next cards in their deck (the quantity of cards copied is equal to the number on the card they drew to trigger the sub-game). During this sub-game, the game that triggered it is on hold and completely unaffected; no cards are removed from players' decks to form the sub-game. (For example, if player 1 drew the 3 card, their deck in the sub-game would be copies of the next three cards in their deck.)
+
+After the game, the winning player's score is calculated from the cards they have in their original deck using the same rules as regular Combat. In the above game, the winning player's score is `291`.
+
+Defend your honor as Raft Captain by playing the small crab in a game of Recursive Combat using the same two decks as before. 
+
+*What is the winning player's score?*
 
 ## EXERCISE 2
 
+Eval set to false here because this approach didn't work.
 
-```{r exercise 2}
+Started again in code chunk `attempt 2` below. 
+
+```{r exercise 2, eval=FALSE}
+solution2 <- input
+
+prior_hands <- list(NA)
+
+input_test <- function(.l) sum(unlist(map(.l, ~ length(.) > 0))) > 1
+
+n <- 0
+
+while (input_test(solution2)) {
+  
+  n <- n + 1
+  
+  # if we've seen this hand before, player A wins by default to avoid infinite loops
+  
+  if (reduce(map(prior_hands, ~ identical(.x, solution2)), `+`) > 0) {
+    
+    # deal top two and add them to player1 with player's one card before player2's
+    solution2[[1]] <- 
+      c(solution2[[1]], 
+        c(pluck(solution2, 1, 1), 
+          pluck(solution2, 2, 1)))
+    
+    solution2 <- map(solution2, tail, -1)
+    
+    next
+  }
+  
+  # if we haven't seen this hand before, add it
+  prior_hands[[n]] <- solution2  
+  
+  
+  # FUNCTION
+  
+  deal_winner <- function(.ls) {
+    
+    # if only one hand has cards, it is the winner
+    has_cards <- 
+      unlist(map(.ls, ~ length(.) > 0))
+    
+    if (sum(has_cards) == 1) {
+      
+      end <- which(has_cards == TRUE)
+      
+      if (end == 1) {
+        res <- "a"
+      } else {
+        res <- "b"
+      }
+      
+      return(res)
+      
+    }
+    
+    # deal cards
+    # if one (or both) player's deal a card whose value is higher than the amount of cards they have left in their deck, we play a normal round where the highest card wins
+    
+    cards <- c(pluck(.ls, 1, 1), 
+               pluck(.ls, 2, 1))
+    
+    if (cards[1] > (length(.ls[[1]]) - 1) ||
+        cards[2] > (length(.ls[[2]]) - 1) 
+    ) {
+      
+      if (cards[1] > cards[2]) {
+        
+        # .ls[[1]] <- c(.ls[[1]], 
+        #               c(pluck(.ls, 1, 1), 
+        #                 pluck(.ls, 2, 1)))
+        
+        return("a")
+        
+      } else {
+        
+        # .ls[[2]] <- c(.ls[[2]], 
+        #               c(pluck(.ls, 2, 1), 
+        #                 pluck(.ls, 1, 1)))
+        
+        return("b")
+        
+      }
+      
+      
+      # .ls <- map(.ls, tail, -1)
+      
+      # res <- deal_winner(.ls)
+      
+      
+    } else {
+      
+      # if above condition isn't met, then both players have enough cards to enter into recursive combat
+      
+      rec_sub_a <- 
+        tail(.ls[[1]], -1) %>% # remove top card (already dealt)
+        .[1:cards[1]] # take top n matching card value
+      rec_sub_b <- 
+        tail(.ls[[2]], -1) %>% 
+        .[1:cards[2]]
+      
+      rec_sub <- list(rec_sub_a, rec_sub_b)
+      
+      res <- deal_winner(rec_sub)
+      
+    }
+    
+    return(res)
+    
+  } # end function
+  
+  
+  round_winner <- deal_winner(solution2)
+  
+  if (round_winner == "a") {
+    solution2[[1]] <- 
+      c(solution2[[1]], 
+        c(pluck(solution2, 1, 1),
+          pluck(solution2, 2, 1)))
+    
+    solution2 <- map(solution2, tail, -1)
+    
+  } else {
+    solution2[[2]] <- 
+      c(solution2[[2]],
+        c(pluck(solution2, 2, 1),
+          pluck(solution2, 1, 1)))
+    
+    solution2 <- map(solution2, tail, -1)
+    
+  }
+  
+  
+} # end while loop
+
+solution2
+
+```
 
 
+## EXERCISE 2 ATTEMPT 2
+
+```{r exercise 2 attempt 2, eval=FALSE}
+# options(expressions = 15000)
+
+
+solution2 <- input
+
+# prior_hands <- list(NA)
+
+play_combat <- function(.ls, prior_hands = list(list("a", "b")), auto_win = FALSE, ...) {
+  
+  # if we've seen hand before, player 1 auto_wins
+  if (
+    map(prior_hands, ~ identical(.x, .ls)) %>% 
+    reduce(., `+`) %>% 
+    `>` (., 0)
+  ) auto_win <- TRUE
+  
+  
+  if (auto_win == FALSE) { 
+    prior_hands <- c(prior_hands, list(.ls))
+  }  
+  
+  # print(prior_hands)
+  
+  cards <- c(pluck(.ls, 1, 1), pluck(.ls, 2, 1))
+  
+  cards_len <- length(cards) # if 1, one of them's run out of cards
+  
+  if (cards_len == 1) return(.ls)
+  
+  
+  # remove cards dealt
+  .ls <- map(.ls, tail, -1)
+  
+  # if we have the cards available, enter recursive combat
+  if (auto_win == FALSE &&
+      cards[1] <= (length(.ls[[1]])) &&    
+      cards[2] <= (length(.ls[[2]]))
+  ) {
+    
+    recurse <- .ls
+    
+    # take top n according to card number
+    recurse[[1]] <- head(.ls[[1]], cards[1])
+    recurse[[2]] <- head(.ls[[2]], cards[2])
+    
+    
+    .ls <- play_combat(recurse)
+    
+  }
+  
+  
+  
+  # check winner and add cards accordingly
+  if (auto_win || 
+      cards[1] > cards[2]) {
+    .ls[[1]] <- c(.ls[[1]], cards)
+  } else {
+    .ls[[2]] <- c(.ls[[2]], rev(cards))
+  }
+  
+  
+  loop_check <- function(.ls) {
+    map(.ls, ~ length(.) > 0) %>%
+      reduce(., sum) %>%
+      `>` (., 1)
+  }
+  
+  while (loop_check(.ls)) {
+    
+    .ls <- play_combat(.ls, prior_hands = prior_hands)
+    
+  }
+  
+  return(.ls)
+}
+
+
+
+# check_play <- TRUE
+# 
+# while (check_play) {
+#   
+#   solution2 <- play_combat(solution2)
+#   
+#   check_play <-
+#     map(solution2, ~ length(.) > 0) %>%
+#     reduce(., sum) %>%
+#     `>` (., 1)
+#   
+# }
+
+play_combat(input)
+
+
+# accumulate(1:5, play_combat, .init = split_input(input_raw))
+
+
+# play_combat(.ls = list(c(4,9,8,5,2), c(3,10,1,7,6)))
+
+# debugonce(play_combat)
+
+
+# solution2_check <- 
+#   which(unlist(map(solution2, ~ length(.) > 0)))
+# 
+# solution2_hand <- solution2[[solution2_check]]
+# 
+# (solution2_hand * 
+#     rev(seq_along(solution2_hand)) ) %>% 
+#   sum()
+
+
+```
+
+
+## EXERCISE 2 ATTEMPT 3
+
+Use function just to return resolve to "a" or "b"?
+
+Also fails
+
+```{r ex2 attempt 3, eval=FALSE}
+solution2 <- input
+
+
+combat <- function(.ls, 
+                   prior_hands = list(list("a", "b")), 
+                   auto_win = FALSE) {
+  
+  names(.ls) <- NULL
+  
+  # if (.ls %in% c("a", "b")) return(.ls)
+  
+  # if one of them doesn't have cards, return the winner
+  card_check_len <- function(.x) unlist(map(.x, ~ length(.) > 0))
+  
+  if (sum(card_check_len(.ls)) == 1) {
+    
+    winner <- which(card_check_len(.ls) == TRUE)
+    
+    if (winner == 1) {
+      names(.ls) <- "a"
+      return(.ls)
+    } else {
+      names(.ls) <- "b"
+      return(.ls)
+    }
+    
+  }
+  
+  # deal cards
+  cards <- c(pluck(.ls, 1, 1), 
+             pluck(.ls, 2, 1))
+  
+  # remove dealt cards
+  .ls <- map(.ls, tail, -1)
+  
+  # check for auto-win
+  auto_win <- reduce(map(prior_hands, ~ identical(.x, .ls)), sum) > 0
+  
+  
+  # add this hand to prior_hands
+  prior_hands <- c(prior_hands, list(.ls))
+  
+  
+  # check for recursion needed
+  recurse_check <- all((unlist(map(.ls, length)) - cards) >= 0 )
+  
+  if (recurse_check == TRUE && auto_win == FALSE) {
+    # take n number of cards from each
+    .ls <- map2(.ls, cards, ~ head(x = .x, n = .y))
+    
+    .ls <- combat(.ls)
+    
+  }
+  
+  # if auto_win, player a wins by default
+  if (auto_win || (!is.null(names(.ls)) && names(.ls)[[1]] == "a")) {
+    .ls[[1]] <- c(.ls[[1]], cards)
+    
+  } else if (!is.null(names(.ls)) && names(.ls)[[1]] == "b") {
+    .ls[[2]] <- c(.ls[[2]], rev(cards))
+    
+  } else if (cards[1] > cards[2]) {
+    .ls[[1]] <- c(.ls[[1]], cards)
+    
+  } else {
+    .ls[[2]] <- c(.ls[[2]], rev(cards))
+    
+  }
+  
+  while (sum(card_check_len(.ls)) > 1) {
+    
+    .ls <- combat(.ls, prior_hands = prior_hands)
+    
+    print(.ls)
+    
+  }
+  
+  winner <- which(card_check_len(.ls) == TRUE)
+  
+  if (winner == 1) {
+    names(.ls) <- "a"
+  } else {
+    names(.ls) <- "b"
+  }
+  
+  return(.ls)
+  
+}
+
+# debugonce(combat)
+
+combat(solution2)
+
+```
+
+
+
+## EXERCISE 2 ATTEMPT 4
+
+Now looking for help online -- found posted to AoC subreddit for RLang by user u/SpirePicking. 
+
+Their solution is below.  I then worked through it step by step with my own (tidyverse) edits to see if I could understand it and get it to work. 
+
+```{r, eval=FALSE}
+library(tidyr)
+
+input <- readLines("20-1222_input_crab_combat.txt")
+
+decks <- list("p1" = input[2:(which(input=="")-1)] %>% as.numeric %>% as.list,
+              "p2" = input[(which(input=="")+2):length(input)] %>% as.numeric %>% as.list)
+
+update_decks <- function(decks, winning_player) {
+  losing_player <- winning_player %% 2 + 1
+  winning_deck <- decks[[winning_player]]
+  losing_deck <- decks[[losing_player]]
+  
+  upd_winning_deck <- append(winning_deck, c(winning_deck[1], losing_deck[1]))[-1]
+  upd_losing_deck <- losing_deck[-1]
+  assign(paste0("upd_deck_p", winning_player), upd_winning_deck)
+  assign(paste0("upd_deck_p", losing_player), upd_losing_deck)
+  upd_decks <- list("p1" = upd_deck_p1, "p2" = upd_deck_p2)
+  
+  return(upd_decks)
+}
+
+play_combat <- function(decks) {
+  while (length(decks[["p1"]]) > 0 & length(decks[["p2"]] > 0)) {
+    winning_player <- ifelse(decks[["p1"]][[1]] > decks[["p2"]][[1]], 1, 2)
+    decks <- update_decks(decks, winning_player)
+  }
+  return(list(winning_player, decks[[winning_player]]))
+}
+
+play_recursive_combat <- function(decks) {
+  
+  is_already_seen <- function(deck, configurations_seen){
+    if (length(configurations_seen) == 0) {return(0)}
+    return(max(sapply(configurations_seen, function(x){identical(deck, x)}))) 
+  }
+  
+  configurations_seen <- list()
+  
+  while (length(decks[["p1"]]) > 0 & length(decks[["p2"]]) > 0) {
+    if(is_already_seen(decks[["p1"]], configurations_seen)) {
+      return(list(c(1), decks[["p1"]]))
+    }
+    configurations_seen <- append(configurations_seen, list(decks[["p1"]]))
+    
+    is_next_round_recusive <- length(decks[["p1"]][-1]) >= decks[["p1"]][1] & length(decks[["p2"]][-1]) >= decks[["p2"]][1]
+    if(is_next_round_recusive){
+      winning_player <- play_recursive_combat(list("p1" = decks[["p1"]][2:(1+decks[["p1"]][[1]])],
+                                                   "p2" = decks[["p2"]][2:(1+decks[["p2"]][[1]])])
+      )[[1]]
+    } else { 
+      winning_player <- ifelse(decks[["p1"]][[1]] > decks[["p2"]][[1]], 1, 2)
+    }
+    decks <- update_decks(decks, winning_player)
+  }
+  return(list(winning_player, decks[[winning_player]]))
+}
+
+ans1 <- function(decks) {
+  combat_results <- play_combat(decks)
+  return(sum(length(combat_results[[2]]):1 * unlist(combat_results[[2]])))
+}
+
+ans2 <- function(decks) {
+  recursive_combat_results <- play_recursive_combat(decks)
+  return(sum(length(recursive_combat_results[[2]]):1 * unlist(recursive_combat_results[[2]])))
+}
+
+ans1(decks)
+ans2(decks)
+```
+
+
+My code works for the sample but not the real data.  I give up for now. 
+
+```{r}
+
+update_decks <- function(decks, winner) {
+  cards <- c(pluck(decks, 1, 1), 
+             pluck(decks, 2, 1))
+  decks <- map(decks, tail, -1)
+  if (winner == 1) {
+    decks[[1]] <- c(decks[[1]], cards[1], cards[2])
+  } else {
+    decks[[2]] <- c(decks[[2]], cards[2], cards[1])
+  }
+  
+  return(decks)
+}
+
+rec_combat <- function(decks, auto_win = FALSE) {
+  
+  config_seen <- function(decks, configs) {
+    if (length(configs) == 0) return(0)
+    return(map(configs, ~ identical(decks, .x)) %>% unlist() %>% as.numeric() %>% max())
+  }
+  
+  configs <- list()
+  
+  check_deck_len <- function(decks) {
+    map(decks, ~ length(.) > 0) %>% 
+      unlist() %>% 
+      min()
+  }
+  
+  while(check_deck_len(decks) > 0) {
+    
+    if (config_seen(decks, configs)) {
+      auto_win <- TRUE
+    }
+    
+    configs <- append(configs, list(decks))
+    
+    need_recursive <- (length(decks[[1]]) - 1) >= pluck(decks, 1, 1) && (length(decks[[2]] - 1) >= pluck(decks, 2, 1))
+    
+    if (need_recursive && auto_win == FALSE) {
+      rec_cards <- c(pluck(decks, 1, 1), pluck(decks, 2, 1))
+      rec_deck <- map(decks, tail, -1) 
+      rec_deck <- map2(rec_deck, rec_cards, ~ head(.x, .y))
+        
+      winning_player <- (rec_combat(decks = rec_deck))[[1]]
+    } else { 
+      winning_player <- case_when(auto_win == TRUE ~ 1,
+                                  pluck(decks, 1, 1) > pluck(decks, 2, 1) ~ 1,
+                                  TRUE ~ 2)
+    }
+    
+    decks <- update_decks(decks, winning_player)
+    
+  }
+  
+  winning_player <- which(unlist(map(decks, ~ length(.) > 0)) > 0)
+  
+  return(list(winning_player, decks[[winning_player]]))
+}
+
+
+
+solution2 <- rec_combat(input) 
+
+sum(solution2[[2]] * (rev(seq_along(solution2[[2]]))))
+
+
+# debugonce(rec_combat)
 ```
 
