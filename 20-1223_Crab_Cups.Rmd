@@ -16,7 +16,7 @@ options(scipen = 999)
 
 The small crab challenges you to a game! The crab is going to mix up some cups, and you have to predict where they'll end up.
 
-The cups will be arranged in a circle and labeled clockwise (your puzzle input). For example, if your labeling were `32415`, there would be five cups in the circle; going clockwise around the circle from the first cup, the cups would be labeled `3, 2, 4, 1, 5`, and then back to 3 again.
+The cups will be arranged in a circle and labeled *clockwise* (your puzzle input). For example, if your labeling were `32415`, there would be five cups in the circle; going clockwise around the circle from the first cup, the cups would be labeled `3, 2, 4, 1, 5`, and then back to 3 again.
 
 Before the crab starts, it will designate the first cup in your list as the *current cup*. The crab is then going to do *100 moves*.
 
@@ -96,12 +96,22 @@ Your puzzle input is 523764819.
 ## INPUT
 
 ```{r sample input}
+sample_raw <- "389125467"
 
+sample <- 
+  str_split(sample_raw, "") %>% 
+  pluck(1) %>% 
+  parse_number()
 ```
 
 
 ```{r input}
-input <- "523764819"
+input_raw <- "523764819"
+
+input <- 
+  str_split(input_raw, "") %>% 
+  pluck(1) %>% 
+  parse_number()
 ```
 
 
@@ -113,8 +123,80 @@ if (use_sample) input <- sample
 ```
 
 
-
 ## EXERCISE 1
+
+```{r exercise 1}
+input
+
+crab_cups <- function(all_cups, cup_pos) {
+  
+  current_cup_value <- all_cups[cup_pos]
+  
+  remove_pos <- (cup_pos + 1):(cup_pos + 3)
+  if (any(remove_pos > 9)) remove_pos[remove_pos > 9] <- remove_pos[remove_pos > 9] - 9
+  
+  removed <- all_cups[remove_pos]
+  
+  all_cups <- all_cups[-remove_pos]
+  
+  
+  dest <- which(all_cups < current_cup_value)
+  if (length(dest) > 1) dest <- dest[which(all_cups[dest] == max(all_cups[dest]))]
+  if (length(dest) == 0) dest <- which(all_cups == max(all_cups))
+  
+  
+  # insert cups back in 
+  if (dest == length(all_cups)) {
+    res <- c(all_cups, removed)
+  } else {
+    res <- c(all_cups[1:dest], 
+             removed, 
+             all_cups[(dest + 1):6])
+  }
+  
+  # shift appropriately, cup that was at the current cup position needs to stay there in the output
+  
+  cup_loc <- which(res == current_cup_value)
+  if (cup_loc == cup_pos) return(res)
+  if (cup_loc > cup_pos) {
+    diff <- cup_loc - cup_pos
+    res <- c(res[(diff + 1):9], res[1:diff])
+  } else {
+    diff <- cup_pos - cup_loc
+    res <- c(tail(res, diff), res)[1:9]
+  }
+  
+  return(res)
+  
+}
+
+gen_seq_nines <- function(len) {
+  n <- (len %/% 9) + 1
+  res <- rep(1:9, n)
+  res[1:len]
+}
+
+
+get_final_seq <- function(nums) {
+  one_pos <- which(nums == 1)
+  if (one_pos == 1) {
+    res <- nums[2:9]
+  } else if (one_pos == 0) {
+    res <- nums[1:8]
+  } else {
+    res <- c(nums[(one_pos + 1):9], nums[1:(one_pos - 1)])
+  }
+  return(str_c(res, collapse = ""))
+}
+
+
+ans1 <- reduce(.x = gen_seq_nines(100), crab_cups, .init = input)
+
+get_final_seq(ans1)
+
+```
+
+My answer for exercise 1 is `49576328`
 
 
 ## EXERCISE 2 NARRATIVE
