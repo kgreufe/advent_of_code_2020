@@ -295,7 +295,7 @@ full_seq <- gen_seq_millions(len = (million * 10))
 
 tictoc::tic("run exercise 2")
 for (i in 1:10000) {
-
+  
   if (i == 1) ans2 <- input
   
   if ((i %% 500) == 0) print(i)
@@ -305,7 +305,108 @@ for (i in 1:10000) {
 }
 tictoc::toc()
 
-  
+
 # get_final_seq_two(ans2)
 ```
+
+## EXERCISE 2 HELP
+
+After trying multiple appraoches, each of which would take days to execute, I looked online for help. 
+
+https://github.com/AdroMine/AdventOfCode2020/blob/main/Day23/solution.R
+
+Essentially, this uses a lookup table to track the next cups in the sequence given a cups values, as opposed to updating an entire vector of length 1 million. Executes part 2 in ~ 15 seconds. 
+
+```{r exercise 2 adromine}
+
+print_list <- function(x, from = "1") {
+  output <- rep(NA, length(x))
+  output[1] <- as.integer(from)
+  for (i in 2:length(x)) {
+    output[i] <- x[output[i - 1]]
+  }
+  output
+}
+
+
+crab_game <- function(input, rounds, part2 = FALSE) {
+  
+  if (part2) {
+    input <- c(input, seq.int(10, 1e6))
+  }
+  
+  n <- length(input)
+  
+  # create vector to track next cups
+  # position in this vector in value of cup you'd like to look up
+  # that is, nxt[5] looks up the next cup after the cup with a value of 5
+  
+  nxt <- integer(n)
+  nxt[input[1:(n - 1)]] <- input[-1]
+  nxt[input[n]] <- input[1]
+  
+  cur <- input[[1]]
+  
+  for (i in seq.int(1, rounds)) {
+    
+    # choose next three
+    pick1 <- nxt[cur]
+    pick2 <- nxt[pick1]
+    pick3 <- nxt[pick2]
+    
+    if (cur == 1L) {
+      target <- n
+    } else {
+      target <- (cur - 1L)
+    }
+    
+    # while loop to find where to place cups
+    while (target %in% c(pick1, pick2, pick3)) {
+      if (target == 1L) {
+        target <- n
+      } else {
+        target <- target - 1L
+      } 
+    }  
+   
+    # what's the cup after the ones we removed/shifted
+    tmp <- nxt[pick3]
+    # the next cup after our current cup will be that value
+    nxt[cur] <- tmp
+    # inserting the cups after the target will shift the next cup after our third removed cup to the next cup after the target (insertion)
+    nxt[pick3] <- nxt[target]
+    # next value after the target will be the first from the removed values (insertion)
+    nxt[target] <- pick1
+    # don't need to update what comes after pick1 or pick2 because those references stay the same as the three are moved in a group!
+    
+    # next current value update for next loop
+    cur <- tmp
+     
+  }
+  
+  if (part2) {
+    prod(nxt[[1]], 
+         nxt[[nxt[[1]]]]
+         )
+  } else {
+    str_c(print_list(nxt)[-1], collapse = "")
+  }
+  
+}
+
+# part 1
+tictoc::tic("exercise 1")
+crab_game(input, rounds = 100, part2 = FALSE)
+tictoc::toc()
+
+# part 2
+tictoc::tic("exercise 2")
+crab_game(input, rounds = 1e7, part2 = TRUE)
+tictoc::toc()
+
+
+```
+
+
+
 
