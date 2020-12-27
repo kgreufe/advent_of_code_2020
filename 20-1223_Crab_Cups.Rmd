@@ -177,7 +177,7 @@ gen_seq_nines <- function(len) {
 }
 
 
-get_final_seq <- function(nums) {
+get_final_seq_one <- function(nums) {
   one_pos <- which(nums == 1)
   if (one_pos == 1) {
     res <- nums[2:9]
@@ -192,19 +192,120 @@ get_final_seq <- function(nums) {
 
 ans1 <- reduce(.x = gen_seq_nines(100), crab_cups, .init = input)
 
-get_final_seq(ans1)
+get_final_seq_one(ans1)
 
 ```
 
 My answer for exercise 1 is `49576328`
 
 
+
 ## EXERCISE 2 NARRATIVE
 
+Due to what you can only assume is a mis-translation (you're not exactly fluent in Crab), you are quite surprised when the crab starts arranging many cups in a circle on your raft - *one million* (`1000000`) in total.
+
+Your labeling is still correct for the first few cups; after that, the remaining cups are just numbered in an increasing fashion starting from the number after the highest number in your list and proceeding one by one until one million is reached. (For example, if your labeling were 54321, the cups would be numbered 5, 4, 3, 2, 1, and then start counting up from 6 until one million is reached.) In this way, *every number from one through one million is used exactly once*.
+
+After discovering where you made the mistake in translating Crab Numbers, you realize the small crab isn't going to do merely 100 moves; the crab is going to do *ten million* (*10000000*) moves!
+
+The crab is going to hide your stars - one each - under the two cups that will end up immediately clockwise of cup 1. You can have them if you predict what the labels on those cups will be when the crab is finished.
+
+In the above example (`389125467`), this would be `934001` and then `159792`; multiplying these together produces `149245887792`.
+
+Determine which two cups will end up immediately clockwise of cup 1. 
+
+*What do you get if you multiply their labels together?*
 
 ## EXERCISE 2
 
-```{r}
+Code takes a long time to run. Interrupted it after 12 hours before seeing how long it takes to complete. 
 
+```{r exercise 2, eval=FALSE}
+million <- 1000000
+
+input <- c(input, (max(input) + 1):million)
+
+
+gen_seq_millions <- function(len) {
+  n <- (len %/% million) + 1
+  res <- rep(1:million, n)
+  res[1:len]
+}
+
+
+crab_cups_two <- function(all_cups, cup_pos) {
+  
+  # print(cup_pos)
+  
+  current_cup_value <- all_cups[cup_pos]
+  
+  remove_pos <- (cup_pos + 1):(cup_pos + 3)
+  if (any(remove_pos > million)) remove_pos[remove_pos > million] <- remove_pos[remove_pos > million] - million
+  
+  removed <- all_cups[remove_pos]
+  
+  all_cups <- all_cups[-remove_pos]
+  
+  
+  dest <- which(all_cups < current_cup_value)
+  if (length(dest) > 1) dest <- dest[which(all_cups[dest] == max(all_cups[dest]))]
+  if (length(dest) == 0) dest <- which(all_cups == max(all_cups))
+  
+  # insert cups back in 
+  if (dest == length(all_cups)) {
+    res <- c(all_cups, removed)
+  } else {
+    res <- c(all_cups[1:dest], 
+             removed, 
+             all_cups[(dest + 1):(million - 3)])
+  }
+  
+  # shift appropriately, cup that was at the current cup position needs to stay there in the output
+  
+  cup_loc <- which(res == current_cup_value)
+  
+  if (cup_loc == cup_pos) return(res)
+  
+  if (cup_loc > cup_pos) {
+    diff <- cup_loc - cup_pos
+    res <- c(res[(diff + 1):million], res[1:diff])
+  } else {
+    diff <- cup_pos - cup_loc
+    res <- c(tail(res, diff), res)[1:million]
+  }
+  
+  return(res)
+  
+}
+
+
+
+get_final_seq_two <- function(vec, len = million) {
+  pos <- which(vec == 1)
+  if (pos == len) return(vec[1:2])
+  if (pos == (len - 1)) return(c(vec[len], vec[1]))
+  
+  return (c(vec[pos + 1], vec[pos + 2]))
+}
+
+
+
+full_seq <- gen_seq_millions(len = (million * 10))
+
+
+tictoc::tic("run exercise 2")
+for (i in 1:10000) {
+
+  if (i == 1) ans2 <- input
+  
+  if ((i %% 500) == 0) print(i)
+  
+  ans2 <- crab_cups_two(ans2, i)
+  
+}
+tictoc::toc()
+
+  
+# get_final_seq_two(ans2)
 ```
 
