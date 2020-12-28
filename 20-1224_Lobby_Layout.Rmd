@@ -58,12 +58,34 @@ Go through the renovation crew's list and determine which tiles they need to fli
 ## INPUT
 
 ```{r sample input}
+sample_raw <- 
+  "sesenwnenenewseeswwswswwnenewsewsw
+neeenesenwnwwswnenewnwwsewnenwseswesw
+seswneswswsenwwnwse
+nwnwneseeswswnenewneswwnewseswneseene
+swweswneswnenwsewnwneneseenw
+eesenwseswswnenwswnwnwsewwnwsene
+sewnenenenesenwsewnenwwwse
+wenwwweseeeweswwwnwwe
+wsweesenenewnwwnwsenewsenwwsesesenwne
+neeswseenwwswnwswswnw
+nenwswwsewswnenenewsenwsenwnesesenew
+enewnwewneswsewnwswenweswnenwsenwsw
+sweneswneswneneenwnewenewwneswswnese
+swwesenesewenwneswnwwneseswwne
+enesenwswwswneneswsenwnewswseenwsese
+wnwnesenesenenwwnenwsewesewsesesew
+nenewswnwewswnenesenwnesewesw
+eneswnwswnwsenenwnwnwwseeswneewsenese
+neswnwewnwnwseenwseesewsenwsweewe
+wseweeenwnesenwwwswnew"
 
+sample <- read_lines(sample_raw)
 ```
 
 
 ```{r input}
-
+input <- read_lines("20-1224_input_lobby_layout.txt")
 ```
 
 
@@ -77,18 +99,147 @@ if (use_sample) input <- sample
 
 ## EXERCISE 1
 
+First thought it to use a data frame to track tile locations and colors. Since this is a hex pattern, I'll use half steps for the grid. 
+
+Since we're only looking at how many end up black, I'll ignore positions in this grid that don't actually correspond to a hex in reality (as each hex needs to have a full number for both x and y or a fraction for both x and y)
+
 ```{r exercise 1}
+# first parse input
+
+parse_directions <- function(string) {
+  
+  string <- str_split(string, "")[[1]]
+  
+  res <- character()
+  
+  while (length(string) > 0) {
+    
+    if (string[[1]] %in% c("e", "w")) {
+      res <- append(res, string[[1]])
+      string <- string[-1]
+      next
+    } else {
+      res <- append(res, str_c(string[1:2], collapse = ""))
+      string <- string[-(1:2)]
+    }
+    
+  }
+  
+  res
+}
+
+input <- map(input, parse_directions)
+
+n_max <- 
+  map(input, length) %>% 
+  unlist() %>% 
+  max()
+
+hex_seq <- seq(-n_max, n_max, 0.5)
+
+hex_grid <- 
+  expand_grid(x = hex_seq, 
+              y = hex_seq, 
+              black = 0)
+
+hex_grid
+
+get_hex_location <- function(vec) {
+  
+  directions_table <- 
+    tribble(
+      ~dir,  ~x,   ~y,
+      "e" ,   1   ,   0 ,
+      "se",  0.5  , -0.5,
+      "sw", -0.5  , -0.5,
+      "w" ,  -1   ,   0 ,
+      "nw", -0.5  ,  0.5,
+      "ne",  0.5  ,  0.5,
+    )
+  
+  pos <- c(0, 0)
+  
+  for (i in seq_along(vec)) {
+    
+    add <- 
+      filter(directions_table,
+             dir == vec[[i]]) %>% 
+      select(x, y) %>% 
+      as_vector()
+    
+    pos <- (pos + add)
+    
+  }
+  pos
+}
+
+
+for (i in seq_along(input)) {
+  
+  location <- get_hex_location(input[[i]])
+  
+  subset <- 
+    hex_grid$x == location["x"] & 
+    hex_grid$y == location["y"]
+  
+  hex_grid$black[subset] <- 
+    hex_grid$black[subset] + 1
+  
+}
+
+hex_grid %>% 
+  mutate(black = black %% 2) %>% 
+  pull(black) %>% 
+  sum()
 
 ```
+
+The answer for my input is `244`
 
 
 
 ## EXERCISE 2 NARRATIVE
 
+The tile floor in the lobby is meant to be a living art exhibit. Every day, the tiles are all flipped according to the following rules:
 
+- Any *black* tile with *zero or more than 2 black tiles* immediately adjacent to it is flipped to *white*.
+
+- Any *white* tile with *exactly 2 black tiles* immediately adjacent to it is flipped to black.
+
+Here, *tiles immediately adjacent* means the six tiles directly touching the tile in question.
+
+The rules are applied *simultaneously* to every tile; put another way, it is first determined which tiles need to be flipped, then they are all flipped at the same time.
+
+In the above example, the number of black tiles that are facing up after the given number of days has passed is as follows:
+
+`Day 1: 15`
+`Day 2: 12`
+`Day 3: 25`
+`Day 4: 14`
+`Day 5: 23`
+`Day 6: 28`
+`Day 7: 41`
+`Day 8: 37`
+`Day 9: 49`
+`Day 10: 37`
+
+`Day 20: 132`
+`Day 30: 259`
+`Day 40: 406`
+`Day 50: 566`
+`Day 60: 788`
+`Day 70: 1106`
+`Day 80: 1373`
+`Day 90: 1844`
+`Day 100: 2208`
+
+After executing this process a total of 100 times, there would be `2208` black tiles facing up.
+
+*How many tiles will be black after 100 days?*
 
 ## EXERCISE 2
 
+I assume we take our answer at the end of part 1 as the starting point...
 
 
 ```{r exercise 2}
