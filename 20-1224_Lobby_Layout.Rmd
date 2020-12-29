@@ -142,7 +142,6 @@ hex_grid <-
               y = hex_seq, 
               black = 0)
 
-hex_grid
 
 get_hex_location <- function(vec) {
   
@@ -243,9 +242,94 @@ I assume we take our answer at the end of part 1 as the starting point...
 
 
 ```{r exercise 2}
+# Let's start by expanding our grid out 100 in each direction, just to be safe
+
+
+hex_seq_two <- seq(-115, 115, 0.5)
+
+hex_grid_two <-
+  expand_grid(x = hex_seq_two, 
+              y = hex_seq_two, 
+              black = 0)
+
+# update this grid to match the data from the first exercise
+hex_grid_two <- 
+  hex_grid_two %>% 
+  left_join(hex_grid, by = c("x", "y")) %>% 
+  mutate(black = coalesce(black.y, black.x)) %>% 
+  select(x, y, black) %>% 
+  mutate(black = black %% 2)
+
+# filter our grid to only have data that can be at a "hex location" -- both x and y are whole numbers OR both x and y are fractions with 0.5
+
+hex_grid_two <- 
+  hex_grid_two %>% 
+  filter((x %% 1 == 0 & y %% 1 == 0) |
+           (x %% 1 == 0.5 & y %% 1 == 0.5))
+
+
+# function to find and analyze neighbors at each point
+# i corresponds to x, j to y
+
+hex_neighbors_black <- function(i, j, grid) {
+  
+  cur <- filter(grid, x == i, y == j) %>% pull(black) %>% `%%` (., 2)
+  
+  subgrid <- filter(grid, 
+                    between(x, (i - 1), (i + 1)), 
+                    between(y, (j- 0.5), (j + 0.5)))
+  
+  sum(pull(subgrid, black)) - cur
+}
+
+
+tictoc::tic("exercise 2")
+for (days in seq.int(100)) {
+  
+  print(str_c("Day: ", days))
+  
+  res2 <- hex_grid_two
+  
+  max_x <- max(abs(min(res2$x[res2$black > 0])), max(res2$x[res2$black > 0])) + 1
+  max_y <- max(abs(min(res2$y[res2$black > 0])), max(res2$y[res2$black > 0])) + 1
+  
+  for (p in seq_along(res2$x)) {
+    
+    if (res2$x[[p]] > max_x || res2$y[[p]] > max_y) next
+    
+    cur <- hex_grid_two$black[[p]] %% 2
+    
+    nblack <- hex_neighbors_black(grid = hex_grid_two, 
+                                  i = hex_grid_two$x[[p]], 
+                                  j = hex_grid_two$y[[p]])
+    
+    if (cur == 1 && (nblack == 0 || nblack > 2)) {
+      res2$black[[p]] <- 0
+    }
+    
+    if (cur == 0 && nblack == 2) {
+      res2$black[[p]] <- 1
+    }
+    
+    
+  }
+  
+  res2 <- mutate(res2, black = black %% 2)
+  
+  hex_grid_two <- res2
+    
+} # end days loop
+
+tictoc::toc()
+
+hex_grid_two %>% 
+  pull(black) %>% 
+  sum()
 
 ```
 
+Takes... uh... around 7 hours to run on my computer so not very efficient.  However, it does complete with the correct answer -- `3665`
 
+It would probably go faster if I built a function to build out the grid as we went.
 
 
